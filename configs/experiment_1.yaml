@@ -1,0 +1,12 @@
+experiment:
+  name: "dataset_test_experiment"
+  steps: 200
+  algorithm:
+    name: "EpsilonGreedy"
+    params:
+      n_arms: 50
+      epsilon: 0.1
+  environment:
+    name: "DatasetEnvironment"
+    params:
+      dataset_path: "data/E1_lowdim.npz"

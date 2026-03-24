@@ -1,0 +1,14 @@
+experiment:
+  name: "fgts_paper_test"
+  steps: 500
+  algorithm:
+    name: "FGTSAlgorithm"
+    params:
+      n_arms: 5
+      feature_dim: 10
+      lasso_start: 50
+      lasso_period: 50
+  environment:
+    name: "DatasetEnvironment"
+    params:
+      dataset_path: "data/fgts_exp_1"
