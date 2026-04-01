@@ -1,14 +1,18 @@
 experiment:
   name: "fgts_paper_test"
   steps: 500
-  algorithm:
-    name: "FGTSAlgorithm"
-    params:
-      n_arms: 5
-      feature_dim: 10
-      lasso_start: 50
-      lasso_period: 50
+  n_runs: 2
   environment:
     name: "DatasetEnvironment"
     params:
       dataset_path: "data/fgts_exp_1"
+  model:
+    name: "FGTSModel"
+    params:
+      feature_dim: 10
+      sigma_prior: 1.0
+      sigma_noise: 0.1
+  algorithm:
+    name: "FGTSAlgorithm"
+    params: {}
+  one_model_per_arm: True

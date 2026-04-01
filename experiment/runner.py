@@ -1,57 +1,69 @@
-import json
-import os
 import time
+import numpy as np
+from experiment.metrics import MetricsTracker
+from experiment.logger import Logger
 
 class ExperimentRunner:
-    def __init__(self, env, algorithm, steps, output_file="results.json"):
+    def __init__(self, env, algorithm_factory, steps: int, n_runs: int = 1, output_file: str = "results.json"):
         self.env = env
-        self.algorithm = algorithm
+        self.algorithm_factory = algorithm_factory
         self.steps = steps
-        self.output_file = output_file
-        self.results = {
-            "rewards": [],
-            "cumulative_reward": [],
-            "regrets":[],
-            "cumulative_regret": [],
-            "average_regret":[],
-            "times":[]
-        }
+        self.n_runs = n_runs
+        self.logger = Logger(output_file)
 
     def run(self):
-        
-        cum_reward = 0.0
-        cum_regret = 0.0
+        all_runs_metrics = {
+            "cumulative_regret": [],
+            "average_regret": [],
+            "regrets": [],
+            "rewards": [],
+            "times": []
+        }
 
-        for step in range(self.steps):
-            start_time = time.time()
-            context = self.env.get_context()
-            action = self.algorithm.select_arm(context)
-            step_result = self.env.step(action)
-            if isinstance(step_result, tuple) and len(step_result) == 2:
-                reward, optimal_reward = step_result
-            else:
-                reward = step_result
-                optimal_reward = reward
-            
-            self.algorithm.update(context, action, reward)
+        for run in range(self.n_runs):
+            np.random.seed(run)
+            try:
+                import torch
+                torch.manual_seed(run)
+            except ImportError:
+                pass
+            if hasattr(self.env, 'reset'):
+                self.env.reset()
 
-            iter_time = time.time() - start_time
-            regret = optimal_reward - reward
-            
-            cum_reward += reward
-            cum_regret += regret
-            avg_regret = cum_regret / (step + 1)
+            algorithm = self.algorithm_factory()
+            tracker = MetricsTracker()
 
-            self.results["rewards"].append(reward)
-            self.results["cumulative_reward"].append(cum_reward)
-            self.results["regrets"].append(regret)
-            self.results["cumulative_regret"].append(cum_regret)
-            self.results["average_regret"].append(avg_regret)
-            self.results["times"].append(iter_time)
+            for step in range(self.steps):
+                start_time = time.time()
+                context = self.env.get_context()
+                action = algorithm.select_arm(context)
+                step_result = self.env.step(action)
 
-        self.save_results()
+                if isinstance(step_result, tuple) and len(step_result) == 2:
+                    reward, optimal_reward = step_result
+                else:
+                    reward = step_result
+                    optimal_reward = reward
 
-    def save_results(self):
-        os.makedirs(os.path.dirname(self.output_file) or ".", exist_ok=True)
-        with open(self.output_file, 'w', encoding='utf-8') as f:
-            json.dump(self.results, f, indent=4)
+                algorithm.update(context, action, reward)
+
+                iter_time = time.time() - start_time
+                regret = optimal_reward - reward
+
+                tracker.add(reward, regret, iter_time)
+
+            metrics = tracker.get_metrics()
+            all_runs_metrics["cumulative_regret"].append(metrics["cumulative_regret"])
+            all_runs_metrics["average_regret"].append(metrics["average_regret"])
+            all_runs_metrics["regrets"].append(metrics["regrets"])
+            all_runs_metrics["rewards"].append(metrics["rewards"])
+            all_runs_metrics["times"].append(metrics["times"])
+
+        aggregated_results = {}
+        for key, value in all_runs_metrics.items():
+            arr = np.array(value)
+            aggregated_results[f"{key}_mean"] = np.mean(arr, axis=0).tolist()
+            aggregated_results[f"{key}_std"] = np.std(arr, axis=0).tolist()
+            aggregated_results[f"{key}_raw"] = arr.tolist()
+
+        self.logger.log(aggregated_results)

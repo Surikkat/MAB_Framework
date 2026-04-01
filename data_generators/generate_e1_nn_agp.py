@@ -55,6 +55,8 @@ def generate_dataset():
              X_pool=X_pool, 
              rewards_clean=rewards_clean, 
              T=T, 
+             thetas=thetas,
+             theta_dim=theta_dim,
              pool_size=pool_size)
 
 if __name__ == "__main__":

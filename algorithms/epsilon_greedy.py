@@ -1,22 +1,23 @@
 import numpy as np
+from typing import Union, List
 from .base import BaseAlgorithm
+from models.base import BaseModel
 
 class EpsilonGreedy(BaseAlgorithm):
-
-    def __init__(self, n_arms: int, epsilon: float = 0.1):
-        super().__init__(n_arms)
+    def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]], epsilon: float = 0.1):
+        super().__init__(n_arms, model)
         self.epsilon = epsilon
-        self.counts = np.zeros(n_arms, dtype=int)
-        self.values = np.zeros(n_arms, dtype=float)
 
     def select_arm(self, context: np.ndarray) -> int:
         if np.random.rand() < self.epsilon:
             return np.random.randint(self.n_arms)
-        
-        return int(np.argmax(self.values))
+        values = []
+        for a in range(self.n_arms):
+            x_a = context[a] if context.ndim > 1 else context
+            mu, _ = self.model[a].predict(x_a)
+            values.append(mu)
+        return int(np.argmax(values))
 
     def update(self, context: np.ndarray, action: int, reward: float) -> None:
-        self.counts[action] += 1
-        n = self.counts[action]
-        value = self.values[action]
-        self.values[action] = value + (reward - value) / n
+        x_a = context[action] if context.ndim > 1 else context
+        self.model[action].fit(x_a, reward)

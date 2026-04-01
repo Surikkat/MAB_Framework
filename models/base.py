@@ -3,12 +3,13 @@ import numpy as np
 
 class BaseModel(ABC):
     @abstractmethod
-    def fit(self, X: np.ndarray, y: float):
-        """Обновить веса модели на основе новых данных."""
+    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         pass
 
     @abstractmethod
-    def predict(self, X: np.ndarray) -> tuple[float, float]:
-        """Возвращает (ожидаемая_награда, неопределенность/стандартное_отклонение)."""
+    def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         pass
 
+    @abstractmethod
+    def sample(self, X: np.ndarray) -> np.ndarray:
+        pass

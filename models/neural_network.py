@@ -26,14 +26,12 @@ class NeuralLinearModel(BaseModel):
         self.model = SimpleMLP(feature_dim, hidden_dim).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.criterion = nn.MSELoss()
-
         self.hidden_dim = hidden_dim
         self.A_inv = np.eye(self.hidden_dim)
 
     def fit(self, x: np.ndarray, y: float):
         x_t = torch.FloatTensor(x).unsqueeze(0).to(self.device)
         y_t = torch.FloatTensor([y]).unsqueeze(0).to(self.device)
-
         self.model.train()
         self.optimizer.zero_grad()
         pred, features = self.model(x_t)
@@ -43,14 +41,17 @@ class NeuralLinearModel(BaseModel):
         z = features.detach().cpu().numpy().reshape(-1, 1)
         self.A_inv -= (self.A_inv @ z @ z.T @ self.A_inv) / (1 + z.T @ self.A_inv @ z)
 
-    def predict(self, x: np.ndarray) -> tuple[float, float]:
+    def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         self.model.eval()
         with torch.no_grad():
             x_t = torch.FloatTensor(x).unsqueeze(0).to(self.device)
             pred, features = self.model(x_t)
-        
         expected_reward = pred.item()
         z = features.cpu().numpy().reshape(-1, 1)
         uncertainty = np.sqrt(z.T @ self.A_inv @ z).item()
-        
-        return expected_reward, uncertainty
+        return np.array([expected_reward]), np.array([uncertainty])
+
+    def sample(self, x: np.ndarray) -> np.ndarray:
+        mu, sigma = self.predict(x)
+        return mu + np.random.randn() * sigma
+
