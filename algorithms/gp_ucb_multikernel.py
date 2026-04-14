@@ -4,6 +4,7 @@ GP-UCB with multiplicative or adaptive kernel over (theta, x) pairs.
 """
 import math
 import numpy as np
+from typing import List, Dict, Any
 from scipy.linalg import cho_solve, cho_factor
 from .base import BaseAlgorithm
 
@@ -85,10 +86,15 @@ class GPUCBKernelFlexibleAlgorithm(BaseAlgorithm):
         ucb = mu + math.sqrt(self.beta) * sigma
         return int(np.argmax(ucb))
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        if context.ndim > 1:
-            new_input = context[action]
-        else:
-            new_input = context
-        self.X.append(new_input)
-        self.y.append(reward)
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            if context.ndim > 1:
+                new_input = context[action]
+            else:
+                new_input = context
+            self.X.append(new_input)
+            self.y.append(reward)
+

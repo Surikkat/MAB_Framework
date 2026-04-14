@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List, Dict, Any
 from .base import BaseAlgorithm
 
 class BootstrapTSBandit(BaseAlgorithm):
@@ -23,17 +24,23 @@ class BootstrapTSBandit(BaseAlgorithm):
         means = np.array([weights[i] @ context[i] for i in range(self.n_arms)])
         return int(np.argmax(means))
 
-    def update(self, context, action, reward):
-        """
-        context: shape (d,)
-        action: int
-        reward: float
-        """
-        self.data.append((context, action, reward))
-        for i in range(self.n_models):
-            if np.random.rand() < self.bootstrap_prob:
-                weights = self.models[i][action]
-                pred = weights @ context
-                error = pred - reward
-                grad = error * context
-                self.models[i][action] -= self.lr * grad
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+
+            """
+            context: shape (d,)
+            action: int
+            reward: float
+            """
+            self.data.append((context, action, reward))
+            for i in range(self.n_models):
+                if np.random.rand() < self.bootstrap_prob:
+                    weights = self.models[i][action]
+                    pred = weights @ context
+                    error = pred - reward
+                    grad = error * context
+                    self.models[i][action] -= self.lr * grad
+

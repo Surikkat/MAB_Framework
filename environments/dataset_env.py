@@ -5,7 +5,8 @@ import pandas as pd
 from .base import BaseEnvironment
 
 class DatasetEnvironment(BaseEnvironment):
-    def __init__(self, dataset_path: str, max_steps: int = None):
+    def __init__(self, dataset_path: str, max_steps: int = None, **kwargs):
+        super().__init__(**kwargs)
         self.dataset_path = dataset_path
         self.current_step = 0
         self.max_steps = max_steps
@@ -90,11 +91,12 @@ class DatasetEnvironment(BaseEnvironment):
         elif self.context_mode == 'per_arm_per_step':
             return self.contexts_per_step[self.current_step]
         elif self.context_mode == 'flat':
-            return self.contexts[self.current_step]
+            context_flat = self.contexts[self.current_step]
+            return np.tile(context_flat, (self.n_arms, 1))
         else:
             return self.contexts
 
-    def step(self, action: int) -> tuple[float, float]:
+    def _step_raw(self, action: int) -> tuple[float, float]:
         if self.current_step >= self.T:
             raise IndexError(
                 f"step() called at step {self.current_step}, but dataset has only {self.T} steps."

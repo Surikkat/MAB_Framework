@@ -43,7 +43,7 @@ class NNAGPModel(BaseModel):
         mll_steps: int = 60,
         jitter: float = 1e-6
     ):
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.theta_dim = theta_dim
         self.x_dim = x_dim
         self.m = int(m)
@@ -145,12 +145,13 @@ class NNAGPModel(BaseModel):
             )
             self.optimizer.step()
 
-    def fit(self, x: np.ndarray, y: float):
+    def fit(self, x: np.ndarray, y: float, delay_fit: bool = False):
         theta, arm_x = self._split_context(x)
         self.thetas_hist.append(torch.tensor(theta, dtype=torch.float32, device=self.device))
         self.Xs_hist.append(torch.tensor(arm_x, dtype=torch.float32, device=self.device))
         self.ys_hist.append(torch.tensor([y], dtype=torch.float32, device=self.device))
-        self._fit_mll()
+        if not delay_fit:
+            self._fit_mll()
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Returns (mu, sigma²) — variance, not std — matching original posterior()."""

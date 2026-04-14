@@ -4,6 +4,7 @@ Adaptive m via SVD pruning. Single shared model for all arms.
 """
 import math
 import numpy as np
+from typing import List, Dict, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -35,7 +36,7 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
         model=None
     ):
         super().__init__(n_arms, model)
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.theta_dim = theta_dim
         self.x_dim = x_dim
         self.m = int(m)
@@ -181,23 +182,29 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
         ucbs = mus + math.sqrt(self.beta) * np.sqrt(sig2s)
         return int(np.argmax(ucbs))
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        if context.ndim > 1:
-            x_full = context[action]
-        else:
-            x_full = context
-        theta, arm_x = self._split_context(x_full)
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            if context.ndim > 1:
+                x_full = context[action]
+            else:
+                x_full = context
+            theta, arm_x = self._split_context(x_full)
 
-        theta_t = torch.tensor(theta, dtype=torch.float32, device=self.device).view(-1)
-        x_t = torch.tensor(arm_x, dtype=torch.float32, device=self.device).view(-1)
-        y_t = torch.tensor([reward], dtype=torch.float32, device=self.device).view(-1)
-        self.thetas.append(theta_t)
-        self.Xs.append(x_t)
-        self.ys.append(y_t)
+            theta_t = torch.tensor(theta, dtype=torch.float32, device=self.device).view(-1)
+            x_t = torch.tensor(arm_x, dtype=torch.float32, device=self.device).view(-1)
+            y_t = torch.tensor([reward], dtype=torch.float32, device=self.device).view(-1)
+            self.thetas.append(theta_t)
+            self.Xs.append(x_t)
+            self.ys.append(y_t)
+            self.step_count += 1
+            
+        if len(feedbacks) == 0:
+            return
 
         self._fit_mll(steps=10)
-        self.step_count += 1
-
         self.m_history.append(self.m)
 
         if (self.step_count % self.T_spec != 0) or (len(self.thetas) < self.m):
@@ -242,3 +249,4 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
 
         self._build_optimizer(self.lr)
         self._fit_mll(steps=10)
+

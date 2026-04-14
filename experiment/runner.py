@@ -39,13 +39,19 @@ class ExperimentRunner:
                 action = algorithm.select_arm(context)
                 step_result = self.env.step(action)
 
-                if isinstance(step_result, tuple) and len(step_result) == 2:
+                if isinstance(step_result, dict) and "available_rewards" in step_result:
+                    available_rewards = step_result["available_rewards"]
+                    reward = step_result.get("instant_reward", 0.0)
+                    optimal_reward = step_result.get("optimal_reward", reward)
+                elif isinstance(step_result, tuple) and len(step_result) == 2:
                     reward, optimal_reward = step_result
+                    available_rewards = [{"action": action, "reward": reward, "context": context}]
                 else:
                     reward = step_result
                     optimal_reward = reward
+                    available_rewards = [{"action": action, "reward": reward, "context": context}]
 
-                algorithm.update(context, action, reward)
+                algorithm.update(available_rewards)
 
                 iter_time = time.time() - start_time
                 regret = optimal_reward - reward

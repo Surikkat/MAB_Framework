@@ -31,7 +31,7 @@ def make_algo_factory(algo_conf, n_arms, feature_dim=None):
                     model_params['feature_dim'] = feature_dim
 
             ModelClass = getattr(models, model_name)
-            one_model = model_config.get('one_model_per_arm', True)
+            one_model = algo_conf.get('one_model_per_arm', model_config.get('one_model_per_arm', True))
             if one_model:
                 model = [ModelClass(**model_params) for _ in range(n_arms)]
             else:
@@ -59,8 +59,15 @@ def main():
     n_runs = exp_config.get('n_runs', 1)
 
     env_config = config.get('environment', {})
-    EnvClass = getattr(environments, env_config['name'])
+    env_name = env_config.get('name', env_config.get('type'))
+    if not env_name:
+        raise ValueError("Environment 'name' or 'type' must be specified in the config")
+    EnvClass = getattr(environments, env_name)
     env_params = env_config.get('params', {})
+    
+    if 'delay' in env_config:
+        env_params['delay_config'] = env_config['delay']
+        
     env = EnvClass(**env_params)
     
     n_arms = getattr(env, 'n_arms', env_config.get('n_arms'))
@@ -122,12 +129,9 @@ def main():
         plt.figure(figsize=(10, 6))
         
         for a_name, data in all_results.items():
-            if metric_key in data:
-                y_data = data[metric_key]
-                if target_metric == "average_regret" and "average_regret_mean" not in data:
-                     y_data = np.array(data["cumulative_regret_mean"]) / t_range
-                     
-                plt.plot(t_range[:len(y_data)], y_data, label=a_name, linewidth=2.0)
+                if metric_key in data:
+                    y_data = data[metric_key]
+                    plt.plot(t_range[:len(y_data)], y_data, label=a_name, linewidth=2.0)
                 
         plt.xlabel("Round t", fontsize=12)
         ylabel = plot_labels.get(target_metric, target_metric.replace('_', ' ').title())

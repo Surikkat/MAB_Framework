@@ -3,6 +3,7 @@
 Diagonal approximation NN-UCB with gradient features.
 """
 import numpy as np
+from typing import List, Dict, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -116,21 +117,27 @@ class NNUCBAlgorithm(BaseAlgorithm):
             ucbs.append(ucb)
         return int(np.argmax(ucbs))
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        if context.ndim > 1:
-            ctx = context[action]
-        else:
-            ctx = context
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        new_ctxs = []
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            if context.ndim > 1:
+                ctx = context[action]
+            else:
+                ctx = context
 
-        if isinstance(ctx, torch.Tensor):
-            ctx = ctx.cpu().numpy()
-        else:
-            ctx = np.array(ctx, dtype=np.float32)
+            if isinstance(ctx, torch.Tensor):
+                ctx = ctx.cpu().numpy()
+            else:
+                ctx = np.array(ctx, dtype=np.float32)
 
-        self.buffer_X.append(ctx)
-        self.buffer_y.append(float(reward))
+            self.buffer_X.append(ctx)
+            self.buffer_y.append(float(reward))
+            new_ctxs.append(ctx)
 
-        if len(self.buffer_X) == 0:
+        if len(self.buffer_X) == 0 or len(feedbacks) == 0:
             return
 
         self.net.train()
@@ -146,5 +153,7 @@ class NNUCBAlgorithm(BaseAlgorithm):
             loss.backward()
             self.optimizer.step()
 
-        phi = self._grad_feature(ctx)
-        self.A_diag += (phi ** 2)
+        for ctx in new_ctxs:
+            phi = self._grad_feature(ctx)
+            self.A_diag += (phi ** 2)
+

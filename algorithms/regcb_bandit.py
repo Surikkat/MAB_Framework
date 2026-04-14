@@ -1,6 +1,7 @@
 from coba.learners import VowpalRegcbLearner
 from .base import BaseAlgorithm
 import numpy as np
+from typing import List, Dict, Any
 
 
 class RegcbBanit(BaseAlgorithm):
@@ -27,15 +28,19 @@ class RegcbBanit(BaseAlgorithm):
         self.action_probs = action_probs
         return int(action)
     
-    def update(self, 
-               context: np.array,
-               arm: int,
-               reward: float):
-        if int(arm) < len(self.action_probs) and self.action_probs[int(arm)] is not None:
-            context = np.asarray(context, dtype=float).flatten().tolist()
-            self.bandit.learn(context=context,
-                            action=int(arm),
-                            reward=float(reward),
-                            probability=float(self.action_probs[int(arm)]))
-        else:
-            raise NotImplementedError("Right now the not None action prob is required! Set it firstly")
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            arm = action
+
+            if int(arm) < len(self.action_probs) and self.action_probs[int(arm)] is not None:
+                context = np.asarray(context, dtype=float).flatten().tolist()
+                self.bandit.learn(context=context,
+                                action=int(arm),
+                                reward=float(reward),
+                                probability=float(self.action_probs[int(arm)]))
+            else:
+                raise NotImplementedError("Right now the not None action prob is required! Set it firstly")
+

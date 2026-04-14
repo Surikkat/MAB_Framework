@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List, Dict, Any
 from .base import BaseAlgorithm
 
 
@@ -15,7 +16,13 @@ class NonContextualTSBandit(BaseAlgorithm):
         samples = np.random.normal(self.mu, std)
         return int(np.argmax(samples))
 
-    def update(self, context, arm, reward):
-        self.counts[arm] += 1
-        self.lambda_[arm] += 1 / self.reward_var
-        self.mu[arm] = (self.mu[arm] * (self.lambda_[arm] - 1 / self.reward_var) + reward / self.reward_var) / self.lambda_[arm]
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+
+            self.counts[action] += 1
+            self.lambda_[action] += 1 / self.reward_var
+            self.mu[action] = (self.mu[action] * (self.lambda_[action] - 1 / self.reward_var) + reward / self.reward_var) / self.lambda_[action]
+
