@@ -6,6 +6,8 @@ from .neural_network import NeuralLinearModel
 from .nn_agp_model import NNAGPModel
 from .gp_rff_model import GPRFFModel
 from .glm_laplace_model import GLMLaplaceModel
+from .neural_ucb_model import NeuralUCBModel
+from .nn_ucb_model import NNUCBModel
 
 # Added from Batch 2
 from .kernel_ucb_model import KernelUCBModel

@@ -21,13 +21,13 @@ class SimpleMLP(nn.Module):
         return val, features
 
 class NeuralLinearModel(BaseModel):
-    def __init__(self, feature_dim: int, hidden_dim: int = 32, lr: float = 0.01):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, feature_dim: int, hidden_dim: int = 32, lr: float = 0.01, device: str = "cpu"):
+        self.device = torch.device(device)
         self.model = SimpleMLP(feature_dim, hidden_dim).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.criterion = nn.MSELoss()
         self.hidden_dim = hidden_dim
-        self.A_inv = np.eye(self.hidden_dim)
+        self.A = np.eye(self.hidden_dim)
 
     def fit(self, x: np.ndarray, y: float):
         x_t = torch.FloatTensor(x).unsqueeze(0).to(self.device)
@@ -39,7 +39,7 @@ class NeuralLinearModel(BaseModel):
         loss.backward()
         self.optimizer.step()
         z = features.detach().cpu().numpy().reshape(-1, 1)
-        self.A_inv -= (self.A_inv @ z @ z.T @ self.A_inv) / (1 + z.T @ self.A_inv @ z)
+        self.A += z @ z.T
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         self.model.eval()
@@ -48,7 +48,13 @@ class NeuralLinearModel(BaseModel):
             pred, features = self.model(x_t)
         expected_reward = pred.item()
         z = features.cpu().numpy().reshape(-1, 1)
-        uncertainty = np.sqrt(z.T @ self.A_inv @ z).item()
+        try:
+            L = np.linalg.cholesky(self.A)
+            v = np.linalg.solve(L, z)
+            uncertainty = np.sqrt(v.T @ v).item()
+        except np.linalg.LinAlgError:
+            uncertainty = np.sqrt(z.T @ np.linalg.solve(self.A, z)).item()
+            
         return np.array([expected_reward]), np.array([uncertainty])
 
     def sample(self, x: np.ndarray) -> np.ndarray:

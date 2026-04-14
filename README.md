@@ -1,123 +1,157 @@
 # Modular Multi-Armed Bandit (MAB) Framework
-**Внутренняя документация для разработчиков / передачи проекта**
 
-Привет! Этот репозиторий представляет собой **модульный фреймворк для экспериментов с многорукими бандитами (MAB)**.
-Раньше это были три разрозненных репозитория с тремя разными научными статьями (FGTS-LASSO, NN-AGP, cMAB Bandits). Добиться их честного сравнения на одном датасете было невозможно из-за жесткой связности кода. 
+Унифицированный модульный фреймворк для разработки, тестирования и бенчмаркинга алгоритмов контекстных многоруких бандитов (Contextual Multi-Armed Bandits). 
 
-Мы полностью переписали архитектуру, сделав код **модульным, независимым от данных и легко расширяемым**. Теперь любые алгоритмы (LinUCB, NeuralLinear, GP-TS и т.д.) работают через единый пайплайн, и их можно сталкивать лбами на любых датасетах в пару строчек кода.
+Фреймворк объединяет SOTA-алгоритмы и модели из различных научных статей, предоставляя стандартизированный пайплайн для их честного сравнения на единых наборах данных (как синтетических, так и реальных).
 
----
+## ✨ Ключевые возможности
 
-## 🏗 Архитектура проекта
-
-Ключевая идея фреймворка — **строгое разделение ответственности (Decoupling)**.  Мы избавились от "божественных классов", которые делали всё подряд. Архитектура строится на 4 китах:
-
-1.  **Environments (Среды) — `environments/`** 
-    Отвечают **только** за выдачу контекстов и симуляцию среды. Главный класс здесь — `DatasetEnvironment`. Он принимает путь к CSV-файлу и эмулирует потоковую отдачу данных: на каждом шаге отдает контекст и прячет истинные награды до того момента, как алгоритм не выберет ручку.
-2.  **Models (Прогнозирующие модели) — `models/`**
-    Отвечают **только** за то, чтобы принять вектор признаков (контекст) и выдать прогноз награды (или распределение вероятностей / доверительный интервал). 
-    Здесь лежат классы типа `OnlineRidgeRegression`, `NeuralLinearModel`, `FGTSLassoModel`. 
-    *Важное правило:* одна модель = одна ручка. Они не знают о существовании других ручек.
-3.  **Algorithms (Стратегии выбора) — `algorithms/`**
-    Отвечают **только** за баланс Exploration-Exploitation (исследование vs использование).
-    Здесь лежат `EpsilonGreedy`, `UCBAlgorithm`, `ThompsonSampling`. 
-    Алгоритм принимает список из $K$ независимых моделей (по одной на каждую из $K$ ручек) и решает, какую ручку дернуть, основываясь на прогнозах моделей.
-4.  **Experiment Runner (Исполнитель) — `experiment/runner.py`**
-    Главный цикл эксперимента (Cycle loop). Он связывает Environment и Algorithm. Отдает контекст из среды в алгоритм, получает выбранный номер ручки, прокидывает его обратно в среду, получает реальную награду (reward) и вызывает `.update()` у алгоритма. Параллельно он логирует метрики (Regret) и считает время.
+* **Строгая модульность (Decoupled Architecture):** Стратегии выбора (Exploration/Exploitation) полностью отделены от прогностических моделей. Вы можете комбинировать любую модель (Linear, Neural, GP) с любым алгоритмом (UCB, Thompson Sampling) "из коробки".
+* **Config-driven эксперименты:** Полная настройка среды, моделей и алгоритмов через YAML-конфигурации. Запуск экспериментов не требует написания кода.
+* **Нативная поддержка Delayed Feedback:** Архитектура симулятора среды поддерживает задержки в получении наград (настраивается через очередь событий).
+* **Воспроизводимость (Reproducibility):** Фиксация seed для всех библиотек, стандартизированное логирование метрик (Cumulative/Average Regret, Runtime) и встроенная генерация графиков.
+* **Готовые бенчмарки:** Включены имплементации алгоритмов из научных статей: FGTS-LASSO, NN-AGP, NeuralUCB, GP-TS, GLM-TS и др.
 
 ---
 
-## 📂 Структура файлов и директорий
+## 🏗 Архитектура
 
-```text
-MAB_Framework/
-├── algorithms/         # Стратегии MAB
-│   ├── epsilon_greedy.py
-│   ├── neural_ucb.py
-│   ├── thompson_sampling.py
-│   └── ucb.py
-├── data/               # Датасеты (например, mushroom_bandit_5000.csv)
-├── environments/       # Эмуляторы среды
-│   ├── base.py
-│   └── dataset_env.py  # Читалка CSV-датасетов (например, Mushrooms)
-├── experiment/         # Движок экспериментов
-│   ├── logger.py       # Сохранение JSON файлов
-│   ├── metrics.py      # Расчет Cumulative Regret / Average Regret
-│   └── runner.py       # Тот самый цикл for step in range(MAX_STEPS)...
-├── models/             # Математические модели, предсказывающие reward
-│   ├── fgts_lasso_model.py
-│   ├── glm_laplace_model.py
-│   ├── gp_rff_model.py
-│   ├── linear_model.py
-│   ├── neural_network.py
-│   └── nn_agp_model.py
-├── scripts/            # Точки входа (запускалки экспериментов)
-│   ├── reproduce_cmab_bandits.py # Скрипт для 3-й статьи (GP/GLM)
-│   ├── reproduce_fgts_lasso.py   # Скрипт для 1-й статьи (LASSO)
-│   ├── reproduce_nn_agp.py       # Скрипт для 2-й статьи (NN-AGP)
-│   ├── run_experiment.py         # Базовый (устаревший) тест
-│   └── run_mushrooms.py          # 🍄 "Mother of all experiments" - сравнение ВСЕХ моделей
-├── experiment/         # (Авто-генерация) Сюда складываются "сырые" метрики в формате .json
-└── plots/              # (Авто-генерация) Сюда складываются готовые графики .png
-```
+Фреймворк строится на 4 независимых компонентах:
+
+1. **Environments (`environments/`)** — симуляторы среды (например, `DatasetEnvironment`). Отвечают за выдачу контекстов (признаков), сокрытие истинных наград и симуляцию задержек (Delayed Feedback).
+2. **Models (`models/`)** — аппроксимирующие модели. Оценивают ожидаемую награду и неопределенность (variance) для конкретного контекста.
+   * *Примеры:* `OnlineRidgeRegression`, `NeuralLinearModel`, `ExactGPModel`, `GLMLaplaceModel`.
+3. **Algorithms (`algorithms/`)** — стратегии многоруких бандитов, реализующие баланс исследования и использования.
+   * *Примеры:* `UCBAlgorithm`, `ThompsonSampling`, `EpsilonGreedy`, `NeuralUCBAlgorithm`.
+4. **Experiment Runner (`experiment/`)** — движок для связывания среды и алгоритмов, прогона итераций, сбора метрик и сохранения результатов.
 
 ---
 
-## 🚀 Как запускать скрипты и что они делают?
+## 🚀 Установка
 
-В папке `scripts/` лежат готовые пайплайны. Чтобы получить результаты, нужно просто вызвать их через Python.
+Рекомендуется использовать Python 3.10+. 
 
-### Скрипты воспроизведения статей (Reproduce)
-Скрипты вытаскивают из нашего зоопарка моделей ровно те, которые описывались в конкретной статье, прогоняют их на тестовом искусственном датасете и строят графики.
-*   `python3 scripts/reproduce_fgts_lasso.py` — Сравнивает FGTS-LASSO, LinUCB и Epsilon-Greedy. Результаты падают в `plots/fgts_lasso/`.
-*   `python3 scripts/reproduce_nn_agp.py` — Выдаст график работы нейросетевого подхода NN-AGP-UCB vs базовый LinUCB. Результаты — в `plots/nn_agp/`.
-*   `python3 scripts/reproduce_cmab_bandits.py` — Прогонит аппроксимационные GP-TS-RFF и GLM-TS-Laplace. Результаты — в `plots/cmab_bandits/`.
+Клонируйте репозиторий и установите необходимые зависимости:
 
-### "Святой Грааль" — `run_mushrooms.py`
-Этот скрипт отвечает на главный вопрос научрука: *"А что если столкнуть все алгоритмы из всех трех статей на одном реальном датасете?"*.
-Запускаем командой:
 ```bash
-python3 scripts/run_mushrooms.py
+git clone https://github.com/your-repo/MAB_Framework.git
+cd MAB_Framework
+pip install -r requirements.txt
 ```
-Скрипт читает датасет грибов `mushroom_bandit_5000.csv` (он уже лежит в папке `data/` внутри фреймворка), прогоняет 7 различных моделей и строит два глобальных графика в `plots/mushrooms/`:
-1.  **Cumulative Regret** — Суммарные потери.
-2.  **Average Regret** — Потери деленные на $t$ (сходимость алгоритма).
 
-**Важные фичи внутри `run_mushrooms.py`:**
-*   **Dependency Injection (через лямбды):** В словаре `configs` модели оборачиваются в `lambda`. Это критически важно! Если бы мы передавали инстансы напрямую, то при `N_RUNS = 5` алгоритм продолжал бы учиться на старых данных из первого прогона. Лямбда заставляет фреймворк создавать свежие, пустые модели для каждого прогона внутри списка независимых экспериментов (runs). 
-*   **Ловушка `KeyboardInterrupt`:** Если ты поставишь 5 000 шагов для тяжелых сеток вроде NN-AGP, скрипт будет работать долго. Если ты решишь прервать его через `Ctrl+C`, скрипт не упадет с ошибкой! Он отловит прерывание, скипнет текущую "медленную" модель, но **обязательно нарисует графики** для тех моделей, которые успели отработать до этого.
+*(Основные зависимости: `numpy`, `pandas`, `scikit-learn`, `torch`, `scipy`, `matplotlib`, `pyyaml`, `pydantic`)*.
 
 ---
 
-## 🧑‍💻 Инструкция: Как прикрутить новые датасеты?
+## 📊 Быстрый старт
 
-Если тебе нужно протестировать эти алгоритмы на новых данных, тебе не нужно трогать ни алгоритмы, ни модели.
+### Вариант 1: Запуск через YAML-конфиг (No-code)
+Настройте эксперимент в файле `configs/test.yaml`:
 
-1.  **Подготовь CSV:** Формат должен быть следующим. Обязательны колонки `t` (номер шага), `arm` (номер ручки), `reward` (награда, где 1.0 — съедобный, 0.0 — ядовитый). Все остальные колонки будут автоматически считаться фичами (features).
-2.  **Загрузи в `DatasetEnvironment`:**
-    В любом проверочном скрипте сделай так:
-    ```python
-    from environments.dataset_env import DatasetEnvironment
-    # В max_steps можешь поставить ограничение, чтобы не ждать миллион лет
-    env = DatasetEnvironment(dataset_path="path/to/my_new_dataset.csv", max_steps=1000)
-    ```
-3.  **Запусти цикл:**
-    Используй класс `ExperimentRunner`, передав ему новый `env` и фабрику твоего алгоритма. Можешь просто скопипастить флоу из `run_mushrooms.py`.
+```yaml
+experiment:
+  name: "demo_experiment"
+  steps: 1000
+  n_runs: 5
+  seed: 42
+
+environment:
+  name: "DatasetEnvironment"
+  params:
+    dataset_path: "data/mushroom_bandit_5000.csv"
+
+algorithms:
+  - name: "UCBAlgorithm"
+    display_name: "LinUCB"
+    params: { alpha: 1.0 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      
+metrics:
+  - cumulative_regret
+  - average_regret
+```
+
+Запустите эксперимент через CLI:
+```bash
+python run.py configs/test.yaml
+```
+Результаты (JSON-логи и графики `.png`) будут сохранены в директорию `results/`.
+
+### Вариант 2: Запуск через Python API
+
+Для более сложных пайплайнов или отладки используйте Python API:
+
+```python
+from environments.dataset_env import DatasetEnvironment
+from models.neural_network import NeuralLinearModel
+from algorithms.ucb import UCBAlgorithm
+from experiment.runner import ExperimentRunner
+
+# 1. Инициализация среды
+env = DatasetEnvironment(dataset_path="data/mushroom_bandit_5000.csv", max_steps=1000)
+
+# 2. Определение фабрики алгоритма (создает свежие инстансы для каждого seed-прогона)
+def algo_factory():
+    n_arms = env.n_arms
+    feature_dim = env.get_context().shape[1]
+    models =[NeuralLinearModel(feature_dim=feature_dim, hidden_dim=64) for _ in range(n_arms)]
+    return UCBAlgorithm(n_arms=n_arms, model=models, alpha=1.0)
+
+# 3. Запуск эксперимента
+runner = ExperimentRunner(
+    env=env,
+    algorithm_factory=algo_factory,
+    steps=env.T,
+    n_runs=5,
+    output_file="results/neural_ucb_results.json"
+)
+runner.run()
+```
 
 ---
 
-## ⚠️ Важные заметки на будущее (Gotchas)
+## 🔬 Воспроизведение бенчмарков (Reproducibility)
 
-1.  **Параметры `MAX_STEPS` и `N_RUNS`**
-    В `run_mushrooms.py` сейчас стоит `MAX_STEPS = 200` и `N_RUNS = 5`. Это "быстрый" режим для проверки работоспособности (отрабатывает за минуту). Для финальных красивых графиков в статью нужно вернуть `MAX_STEPS = 5000` (как в оригинале).
-2.  **Ворнинг "covariance is not symmetric positive-semidefinite"**
-    В `.models/fgts_lasso_model.py` была добавлена "магия" численной стабилизации (jitter). 
-    ```python
-    jitter = np.eye(len(Sigma_sub)) * 1e-6
-    theta_sample = np.random.multivariate_normal(mu_sub, Sigma_sub + jitter)
-    ```
-    **Не удаляй этот Jitter!** При перемножении больших матриц из-за float-округлений они перестают быть идеально полуположительно-определенными, и NP начинает ругаться. Jitter решает эту проблему.
-3.  **Почему LinUCB иногда бьет нейросети?**
-    Если увидишь, что простая регрессия рвет NN-AGP в пух и прах на первых тысячах шагов — это не баг. Это *Cold Start Problem* и *Inductive Bias*. Нейросетям нужны сотни примеров, чтобы настроить веса, в то время как LinUCB молниеносно выцепляет линейные паттерны. Ищи сломовые точки (intersection) на больших дистанциях (>10 000 шагов), там нейросети могут отыграться за счет улавливания нелинейности.
+В папке `scripts/` находятся готовые пайплайны для воспроизведения результатов из имплементированных научных статей:
 
-Успешной работы и крутых экспериментов! 🚀
+* `reproduce_fgts_lasso.py` — бенчмаркинг Feature Gated Thompson Sampling (FGTS-LASSO) vs LinUCB.
+* `reproduce_nn_agp.py` — бенчмаркинг алгоритма Neural-Network Approximate Gaussian Process UCB.
+* `reproduce_cmab_bandits.py` — сравнение аппроксимационных методов (GP-TS-RFF, GLM-TS-Laplace).
+* `run_mushrooms.py` — **глобальный бенчмарк**. Сравнение всех реализованных алгоритмов (линейных, нейросетевых и GP) на реальном датасете UCI Mushrooms.
+
+Запуск любого скрипта:
+```bash
+python scripts/run_mushrooms.py
+```
+
+---
+
+## 🛠 Подключение собственных данных
+
+Фреймворк позволяет легко тестировать алгоритмы на ваших данных без изменения исходного кода.
+
+1. Подготовьте `CSV` файл. Обязательные колонки:
+   * `t` — номер шага/итерации (int).
+   * `arm` — идентификатор/номер ручки (int).
+   * `reward` — полученная награда (float, оптимальная награда на шаге `t` должна быть максимальной).
+   * Все остальные колонки, начинающиеся с `context_` (или любые другие, кроме служебных), автоматически интерпретируются как признаки (features).
+2. Передайте путь к файлу в `DatasetEnvironment`:
+
+```python
+env = DatasetEnvironment(dataset_path="path/to/custom_dataset.csv")
+```
+
+---
+
+## 📄 Структура директорий
+
+* `algorithms/` — алгоритмы (балансировка Exploration-Exploitation).
+* `models/` — модели для оценки `predict()` (mu, sigma) или `sample()`.
+* `environments/` — интерфейсы сред и парсеры данных.
+* `experiment/` — инструменты логирования, метрики и базовый цикл (Runner).
+* `scripts/` — готовые сценарии тестирования.
+* `configs/` — конфигурации YAML.
+* `data/` — датасеты для тестирования.
+* `tests/` — `pytest` тесты для проверки целостности ядра (Delayed Feedback, валидация и т.д.).

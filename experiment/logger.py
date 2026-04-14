@@ -3,6 +3,16 @@ import os
 import csv
 import numpy as np
 
+class NPEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NPEncoder, self).default(obj)
+
 class Logger:
     def __init__(self, output_file: str):
         self.output_file = output_file
@@ -10,18 +20,9 @@ class Logger:
     def log(self, data: dict):
         os.makedirs(os.path.dirname(self.output_file) or ".", exist_ok=True)
         
-        def numpy_default(obj):
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()
-            if isinstance(obj, np.integer):
-                return int(obj)
-            if isinstance(obj, np.floating):
-                return float(obj)
-            raise TypeError
-            
         if self.output_file.endswith(".json"):
             with open(self.output_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=4, default=numpy_default)
+                json.dump(data, f, indent=4, cls=NPEncoder)
         elif self.output_file.endswith(".csv"):
             if not data:
                 return
@@ -50,4 +51,4 @@ class Logger:
                 sidecar = self.output_file.replace('.csv', '_raw.json')
                 nested_data = {k: data[k] for k in nested_keys}
                 with open(sidecar, 'w', encoding='utf-8') as f:
-                    json.dump(nested_data, f, indent=2, default=numpy_default)
+                    json.dump(nested_data, f, indent=2, cls=NPEncoder)

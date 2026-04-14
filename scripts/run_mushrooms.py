@@ -82,7 +82,7 @@ def main():
         },
         {
             "name": "NeuralLinear",
-            "algo_factory": lambda: NeuralUCBAlgorithm(
+            "algo_factory": lambda: UCBAlgorithm(
                 n_arms=n_arms,
                 model=[NeuralLinearModel(feature_dim=feature_dim, hidden_dim=32, lr=0.01) for _ in range(n_arms)],
                 alpha=1.0
@@ -115,7 +115,8 @@ def main():
             runner.run()
         except KeyboardInterrupt:
             print(f"\n[!] Interrupted during {config['name']}")
-            pass
+            import sys
+            sys.exit(1)
         
         if output_file.exists():
             with open(output_file, 'r') as f:

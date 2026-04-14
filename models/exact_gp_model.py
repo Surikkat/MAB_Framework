@@ -7,9 +7,10 @@ from .base import BaseModel
 
 
 class ExactGPModel(BaseModel):
-    def __init__(self, gamma: float = 1.0, sigma_noise: float = 0.1):
+    def __init__(self, gamma: float = 1.0, sigma_noise: float = 0.1, window_size: int = None):
         self.gamma = gamma
         self.sigma_noise = sigma_noise
+        self.window_size = window_size
         self.X_hist = []
         self.Y_hist = []
 
@@ -20,6 +21,9 @@ class ExactGPModel(BaseModel):
     def fit(self, x: np.ndarray, y: float):
         self.X_hist.append(x)
         self.Y_hist.append(y)
+        if self.window_size is not None and len(self.X_hist) > self.window_size:
+            self.X_hist.pop(0)
+            self.Y_hist.pop(0)
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         x_row = x.reshape(1, -1)

@@ -41,6 +41,6 @@ class NNAGPUCBAlgorithm(BaseAlgorithm):
             x_a = context[action] if context.ndim > 1 else context
             self.model.fit(x_a, reward, delay_fit=True)
             
-        if len(feedbacks) > 0 and hasattr(self.model, '_fit_mll'):
-            self.model._fit_mll()
+        if len(feedbacks) > 0:
+            self.model.finalize_update()
 

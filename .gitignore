@@ -1,4 +1,10 @@
 __pycache__/
-*.pyc
-.DS_Store
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Сгенерированные результаты и данные
+data/
 results/
+experiment/**/*.json
+plots/**/*.png

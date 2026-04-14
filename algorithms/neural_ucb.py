@@ -1,123 +1,60 @@
 """NeuralUCB — exact reproduction of NN_AGP/bandits/neural_ucb.py.
 
-Full gradient-based NeuralUCB with Z-matrix, gamma_t computation, and SGD training.
-This is a MONOLITHIC algorithm (not Model+Algorithm separation) because the original
-tightly couples the MLP, gradient features, and Z-matrix.
+Full gradient-based NeuralUCB with Z-matrix and gamma_t computation.
+This has been decoupled to interact solely with BaseAlgorithms.
 """
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Optional, List, Dict, Any
 from .base import BaseAlgorithm
 
-torch.set_default_dtype(torch.float32)
-
-
-class _MLP(nn.Module):
-    def __init__(self, input_dim: int, m: int, L: int):
-        super().__init__()
-        layers = []
-        in_dim = input_dim
-        for _ in range(L):
-            layers.append(nn.Linear(in_dim, m))
-            layers.append(nn.ReLU())
-            in_dim = m
-        layers.append(nn.Linear(in_dim, 1))
-        self.net = nn.Sequential(*layers)
-
-    def forward(self, x):
-        return self.net(x).squeeze(-1)
-
-
 class NeuralUCBAlgorithm(BaseAlgorithm):
-    """Exact port of NN_AGP/bandits/neural_ucb.py NeuralUCB class.
-
-    Uses gradient features for exploration bonus, Z-matrix for confidence,
-    and a theoretical gamma_t formula.
-    """
+    """Exact port of NN_AGP/bandits/neural_ucb.py NeuralUCB class decoupled from PyTorch."""
     def __init__(self,
                  n_arms: int,
-                 input_dim: int,
+                 model,
                  T: int,
                  lambd: float = 1.0,
                  nu: float = 1.0,
                  delta: float = 0.01,
                  S: float = 1.0,
-                 eta: float = 1e-3,
-                 J: int = 20,
                  m: int = 64,
                  L: int = 2,
                  C1: float = 1.0,
                  C2: float = 1.0,
-                 C3: float = 1.0,
-                 device: str = "cpu",
-                 model=None):
+                 C3: float = 1.0):
         super().__init__(n_arms, model)
-        self.device = device
-        self.input_dim = input_dim
         self.T = T
         self.lambd = lambd
         self.nu = nu
         self.delta = delta
         self.S = S
-        self.eta = eta
-        self.J = J
         self.m = m
         self.L = L
         self.C1 = C1
         self.C2 = C2
         self.C3 = C3
 
-        self._model = _MLP(input_dim, m, L).to(self.device)
-        self.theta0_vec = self._get_param_vector(self._model).copy()
-
-        self.p = self.theta0_vec.size
+        if hasattr(self.model, "p"):
+            self.p = self.model.p
+        else:
+            self.p = self.model.theta0_vec.size
+            
         self.Z = (lambd * np.eye(self.p)).astype(np.float64)
-
-        self.history_X = []
-        self.history_y = []
 
         self._Z_inv_cache = None
         self._Z_inv_valid = False
-
         self._eps = 1e-12
-
-    def _get_param_vector(self, model: nn.Module) -> np.ndarray:
-        with torch.no_grad():
-            vecs = []
-            for p in model.parameters():
-                vecs.append(p.view(-1).cpu().numpy())
-            if vecs:
-                return np.concatenate(vecs).astype(np.float64)
-            else:
-                return np.zeros(0, dtype=np.float64)
-
-    def _set_param_vector(self, model: nn.Module, vec: np.ndarray):
-        vec = vec.astype(np.float32)
-        pointer = 0
-        with torch.no_grad():
-            for p in model.parameters():
-                numel = p.numel()
-                chunk = vec[pointer:pointer+numel]
-                p.data.copy_(torch.from_numpy(chunk.reshape(p.shape)).to(p.device))
-                pointer += numel
-        assert pointer == vec.size
-
-    def _grad_wrt_params(self, x_np: np.ndarray, use_model: Optional[nn.Module] = None) -> np.ndarray:
-        model = use_model if use_model is not None else self._model
-        model.zero_grad()
-        x_t = torch.from_numpy(x_np.astype(np.float32)).to(self.device).unsqueeze(0)
-        out = model(x_t)
-        grads = torch.autograd.grad(out, [p for p in model.parameters()], retain_graph=False, create_graph=False)
-        vecs = [g.contiguous().view(-1).cpu().numpy().astype(np.float64) for g in grads]
-        return np.concatenate(vecs)
+        self.t_round = 0
 
     def compute_gamma(self, t: int) -> float:
         t = max(2, int(t))
 
         C1, C2, C3 = self.C1, self.C2, self.C3
-        m, L, lambd, eta, J, nu, delta, S = self.m, self.L, self.lambd, self.eta, self.J, self.nu, self.delta, self.S
+        m, L, lambd, nu, delta, S = self.m, self.L, self.lambd, self.nu, self.delta, self.S
+        
+        # Pull eta and J from model if available
+        eta = getattr(self.model, 'eta', 1e-3)
+        J = getattr(self.model, 'J', 20)
 
         signZ, logdetZ = np.linalg.slogdet(self.Z + self._eps*np.eye(self.p))
         signLam, logdetLam = np.linalg.slogdet(lambd * np.eye(self.p))
@@ -161,11 +98,10 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
         return self._Z_inv_cache
 
     def select_arm(self, context: np.ndarray) -> int:
-        """context: shape (n_arms, input_dim) or pool of arm contexts."""
         if context.ndim == 1:
             context = context.reshape(1, -1)
 
-        t = max(1, len(self.history_y) + 1)
+        t = max(1, self.t_round + 1)
         gamma_t = self.compute_gamma(t)
 
         Z_inv = self._ensure_Z_inv()
@@ -174,11 +110,11 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
         K = context.shape[0]
         for i in range(K):
             x = context[i]
-            with torch.no_grad():
-                xt = torch.from_numpy(x.astype(np.float32)).to(self.device).unsqueeze(0)
-                f_val = float(self._model(xt).cpu().numpy().squeeze())
+            
+            mu, _ = self.model.predict(x)
+            f_val = float(mu[0])
 
-            g_vec = self._grad_wrt_params(x)
+            g_vec = self.model.get_grad_features(x)
             q = float(g_vec.dot(Z_inv.dot(g_vec)))
             u = f_val + gamma_t * np.sqrt(max(0.0, q) / float(self.m))
             utilities.append(float(u))
@@ -195,39 +131,12 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
             else:
                 x_chosen = context
 
-            self.history_X.append(x_chosen.astype(np.float32))
-            self.history_y.append(float(reward))
+            self.t_round += 1
+            self.model.fit(x_chosen, reward)
 
-            g_vec = self._grad_wrt_params(x_chosen)
+            g_vec = self.model.get_grad_features(x_chosen)
             self.Z += np.outer(g_vec, g_vec) / float(self.m)
             self._Z_inv_valid = False
             
         if len(feedbacks) > 0:
-            self._train_nn()
-
-    def _train_nn(self):
-        if len(self.history_y) == 0:
-            return
-
-        optimizer = optim.SGD(self._model.parameters(), lr=self.eta, momentum=0.0)
-        X = torch.from_numpy(np.stack(self.history_X).astype(np.float32)).to(self.device)
-        y = torch.from_numpy(np.array(self.history_y, dtype=np.float32)).to(self.device)
-
-        theta0 = torch.from_numpy(self.theta0_vec.astype(np.float32)).to(self.device)
-
-        for _ in range(self.J):
-            optimizer.zero_grad()
-            preds = self._model(X)
-            mse = 0.5 * torch.mean((preds - y)**2) * X.shape[0]
-            cur_vec = torch.cat([p.view(-1) for p in self._model.parameters()])
-            reg = 0.5 * float(self.m * self.lambd) * torch.sum((cur_vec - theta0)**2)
-            loss = mse + reg
-            loss.backward()
-            optimizer.step()
-
-    def reset(self):
-        self.history_X = []
-        self.history_y = []
-        self.Z = (self.lambd * np.eye(self.p)).astype(np.float64)
-        self._Z_inv_valid = False
-        self._set_param_vector(self._model, self.theta0_vec.copy())
+            self.model.finalize_update()

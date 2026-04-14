@@ -21,10 +21,19 @@ class ExperimentRunner:
         }
 
         for run in range(self.n_runs):
-            np.random.seed(run)
+            if hasattr(self, 'global_seed') and self.global_seed is not None:
+                seed_val = self.global_seed + run
+            else:
+                seed_val = run
+            
+            import random
+            random.seed(seed_val)
+            np.random.seed(seed_val)
             try:
                 import torch
-                torch.manual_seed(run)
+                torch.manual_seed(seed_val)
+                if torch.cuda.is_available():
+                    torch.cuda.manual_seed_all(seed_val)
             except ImportError:
                 pass
             if hasattr(self.env, 'reset'):

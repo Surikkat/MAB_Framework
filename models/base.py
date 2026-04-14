@@ -3,13 +3,21 @@ import numpy as np
 
 class BaseModel(ABC):
     @abstractmethod
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+    def fit(self, x: np.ndarray, y: float) -> None:
         pass
 
     @abstractmethod
-    def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         pass
 
     @abstractmethod
-    def sample(self, X: np.ndarray) -> np.ndarray:
+    def sample(self, x: np.ndarray) -> np.ndarray:
+        pass
+
+    def get_grad_features(self, x: np.ndarray) -> np.ndarray:
+        """Return the gradient features (e.g. for Fisher matrix) if supported, else None."""
+        return None
+
+    def finalize_update(self) -> None:
+        """Called by algorithms at the end of an update batch to sync/fit underlying heavy processes."""
         pass
