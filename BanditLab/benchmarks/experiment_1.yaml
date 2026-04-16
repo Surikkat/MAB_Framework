@@ -1,0 +1,18 @@
+experiment:
+  name: "dataset_test_experiment"
+  steps: 200
+  n_runs: 3
+  environment:
+    name: "DatasetEnvironment"
+    params:
+      dataset_path: "data/E1_lowdim.npz"
+  model:
+    name: "OnlineRidgeRegression"
+    params:
+      feature_dim: 10
+      l2_reg: 1.0
+  algorithm:
+    name: "EpsilonGreedy"
+    params:
+      epsilon: 0.1
+  one_model_per_arm: True
