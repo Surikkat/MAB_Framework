@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Union, List
+from typing import Union, List, Dict, Any
 from .base import BaseAlgorithm
 from models.base import BaseModel
 
@@ -16,6 +16,11 @@ class UCBAlgorithm(BaseAlgorithm):
             ucb_values.append(mu + self.alpha * sigma)
         return int(np.argmax(ucb_values))
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        x_a = context[action] if context.ndim > 1 else context
-        self.model[action].fit(x_a, reward)
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            x_a = context[action] if context.ndim > 1 else context
+            self.model[action].fit(x_a, reward)
+

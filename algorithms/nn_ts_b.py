@@ -3,6 +3,7 @@
 Neural Thompson Sampling with per-arm networks.
 """
 import numpy as np
+from typing import List, Dict, Any
 import torch
 import torch.nn as nn
 from itertools import chain
@@ -78,37 +79,50 @@ class NNTSBAlgorithm(BaseAlgorithm):
         arm = rewards.argmax()
         return int(arm)
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        self.current_round += 1
-        if self.current_round > self.stop_rounds:
-            return
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        new_feedbacks_by_action = {i: [] for i in range(self.arms)}
+        
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            self.current_round += 1
+            if self.current_round > self.stop_rounds:
+                continue
 
-        if context.ndim > 1:
-            ctx = context[action]
-        else:
-            ctx = context
-
-        ctx_t = torch.FloatTensor(ctx)
-        self.rewards[action].append(reward)
-        self.contexts[action].append(ctx_t)
-
-        previous_loss = float('inf')
-        step = 0
-        while True:
-            step += 1
-            self.opts[action].zero_grad()
-            loss = self.__L(action, reward)
-            loss.backward()
-            self.opts[action].step()
-            if 1 - loss / previous_loss < self.e or step > self.max_steps:
-                break
+            if context.ndim > 1:
+                ctx = context[action]
             else:
-                previous_loss = loss
+                ctx = context
 
-        self.opts[action].zero_grad()
-        (self.NNs[action](ctx_t.unsqueeze(0))*self.width**(0.5)).reshape(-1).backward()
-        parameters_grad_tensor_one_net = []
-        for parames in self.NNs[action].parameters():
-            parameters_grad_tensor_one_net.append(parames.grad.reshape(-1))
-        parameters_grad_tensor_one_net = torch.cat(parameters_grad_tensor_one_net, dim=0)
-        self.U[action] += parameters_grad_tensor_one_net.reshape(-1, 1)@parameters_grad_tensor_one_net.reshape(1, -1)/self.width
+            ctx_t = torch.FloatTensor(ctx)
+            self.rewards[action].append(reward)
+            self.contexts[action].append(ctx_t)
+            new_feedbacks_by_action[action].append(ctx_t)
+
+        for action, new_ctxs in new_feedbacks_by_action.items():
+            if len(new_ctxs) == 0:
+                continue
+
+            previous_loss = float('inf')
+            step = 0
+            while True:
+                step += 1
+                self.opts[action].zero_grad()
+                loss = self.__L(action, 0.0)
+                loss.backward()
+                self.opts[action].step()
+                if 1 - loss / previous_loss < self.e or step > self.max_steps:
+                    break
+                else:
+                    previous_loss = loss
+
+            for ctx_t in new_ctxs:
+                self.opts[action].zero_grad()
+                (self.NNs[action](ctx_t.unsqueeze(0))*self.width**(0.5)).reshape(-1).backward()
+                parameters_grad_tensor_one_net = []
+                for parames in self.NNs[action].parameters():
+                    parameters_grad_tensor_one_net.append(parames.grad.reshape(-1))
+                parameters_grad_tensor_one_net = torch.cat(parameters_grad_tensor_one_net, dim=0)
+                self.U[action] += parameters_grad_tensor_one_net.reshape(-1, 1)@parameters_grad_tensor_one_net.reshape(1, -1)/self.width
+

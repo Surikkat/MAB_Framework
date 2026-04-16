@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from typing import List, Dict, Any
 from .base import BaseAlgorithm
 from models.base import BaseModel
 
@@ -32,6 +33,14 @@ class NNAGPUCBAlgorithm(BaseAlgorithm):
             ucb_values.append(mu + math.sqrt(self.beta) * np.sqrt(sigma2))
         return int(np.argmax(ucb_values))
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        x_a = context[action] if context.ndim > 1 else context
-        self.model.fit(x_a, reward)
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            x_a = context[action] if context.ndim > 1 else context
+            self.model.fit(x_a, reward, delay_fit=True)
+            
+        if len(feedbacks) > 0 and hasattr(self.model, '_fit_mll'):
+            self.model._fit_mll()
+

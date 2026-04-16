@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List, Dict, Any
 from .base import BaseAlgorithm
 
 
@@ -47,9 +48,13 @@ class CustomTSBandit(BaseAlgorithm):
 
         return int(np.argmax(rewards))
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        context_transformed = self._transform(context)
-        self.model.partial_fit(context_transformed, action, reward)
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            context_transformed = self._transform(context)
+            self.model.partial_fit(context_transformed, action, reward)
 
     def train(self):
         pass

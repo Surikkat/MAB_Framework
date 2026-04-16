@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List, Dict, Any
 from .base import BaseAlgorithm
 from scipy.special import expit
 
@@ -46,36 +47,41 @@ class SGDTSBandit(BaseAlgorithm):
         scores = expanded_context.dot(theta_sample)
         return int(np.argmax(scores))
 
-    def update(self, context: np.ndarray, arm: int, reward: float):
-        x = np.zeros(self.d)  # shape (K*d,)
-        start = arm * self.original_d
-        end = (arm + 1) * self.original_d
-        x[start:end] = context  # set up context only for specific arm
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            x = np.zeros(self.d)  # shape (K*d,)
+            start = action * self.original_d
+            end = (action + 1) * self.original_d
+            x[start:end] = context  # set up context only for specific arm
 
-        # Cache context and target for buffer
-        if self.t < self.warmup_steps:
-            self.X_buffer.append(x)
-            self.y_buffer.append(reward)
+            # Cache context and target for buffer
+            if self.t < self.warmup_steps:
+                self.X_buffer.append(x)
+                self.y_buffer.append(reward)
 
-            if self.t == self.warmup_steps - 1:
-                # Perform ridge regression MLE at warmup_steps
-                X = np.vstack(self.X_buffer)  # shape: (warmup_steps, K*d)
-                y = np.array(self.y_buffer)  # shape: (warmup_steps,)
-                theta = np.zeros(self.d)  # learning parameter vector with dimension (K*d,) for each arm
-                for _ in range(self.mle_steps):
-                    mu_res = self.mu_fucntion(X.dot(theta))
-                    loss_grad = X.T.dot(mu_res - y) + self.lambda_prior * theta  # L2 - regularization
+                if self.t == self.warmup_steps - 1:
+                    # Perform ridge regression MLE at warmup_steps
+                    X = np.vstack(self.X_buffer)  # shape: (warmup_steps, K*d)
+                    y = np.array(self.y_buffer)  # shape: (warmup_steps,)
+                    theta = np.zeros(self.d)  # learning parameter vector with dimension (K*d,) for each arm
+                    for _ in range(self.mle_steps):
+                        mu_res = self.mu_fucntion(X.dot(theta))
+                        loss_grad = X.T.dot(mu_res - y) + self.lambda_prior * theta  # L2 - regularization
 
-                    theta -= self.mle_lr * loss_grad
+                        theta -= self.mle_lr * loss_grad
 
-                self.theta = theta
-                self.V_diag += np.sum(X ** 2, axis=0)  # accumulate V_diag from warmup data
-        else:
-            # Online SGD update
-            mu_res = self.mu_fucntion(self.theta.dot(x))
-            sgd_loss_grad = (mu_res - reward) * x + self.lambda_prior * self.theta
-            self.theta -= self.lr * sgd_loss_grad
+                    self.theta = theta
+                    self.V_diag += np.sum(X ** 2, axis=0)  # accumulate V_diag from warmup data
+            else:
+                # Online SGD update
+                mu_res = self.mu_fucntion(self.theta.dot(x))
+                sgd_loss_grad = (mu_res - reward) * x + self.lambda_prior * self.theta
+                self.theta -= self.lr * sgd_loss_grad
 
-            # Update V_diag
-            self.V_diag += x ** 2
-        self.t += 1
+                # Update V_diag
+                self.V_diag += x ** 2
+            self.t += 1
+

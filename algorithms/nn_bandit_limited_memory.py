@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List, Dict, Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -196,33 +197,42 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
             self.E.pop(0)
         self.E.append((torch.tensor(context), arm, reward))
 
-    def update(self, context, arm, reward):
-        if context.ndim > 1:
-            context = context[arm]
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        trigger_training = False
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
 
-        self._update_buffer(context, arm, reward)
+            if context.ndim > 1:
+                context = context[action]
 
-        context_tensor = torch.tensor(context, dtype=torch.float32)
-        phi_t = self.dnn.get_phi(context_tensor)
-        phi_t_flat = phi_t.squeeze()
+            self._update_buffer(context, action, reward)
 
-        self.precision[arm] += torch.outer(phi_t_flat, phi_t_flat)
-        self.cov[arm] = torch.linalg.inv(self.precision[arm])
+            context_tensor = torch.tensor(context, dtype=torch.float32)
+            phi_t = self.dnn.get_phi(context_tensor)
+            phi_t_flat = phi_t.squeeze()
 
-        self.f[arm] += phi_t_flat * reward
+            self.precision[action] += torch.outer(phi_t_flat, phi_t_flat)
+            self.cov[action] = torch.linalg.inv(self.precision[action])
 
-        prior_contribution = torch.mv(self.precision_prior[arm], self.mu_prior[:, arm])
-        self.mu[arm] = torch.mv(self.cov[arm], self.f[arm] + prior_contribution)
+            self.f[action] += phi_t_flat * reward
 
-        self.yy[arm] += reward ** 2
-        self.a[arm] += 0.5
+            prior_contribution = torch.mv(self.precision_prior[action], self.mu_prior[:, action])
+            self.mu[action] = torch.mv(self.cov[action], self.f[action] + prior_contribution)
 
-        b_update = 0.5 * self.yy[arm]
-        b_update += 0.5 * torch.dot(self.mu_prior[:, arm], torch.mv(self.precision_prior[arm], self.mu_prior[:, arm]))
-        b_update -= 0.5 * torch.dot(self.mu[arm], torch.mv(self.precision[arm], self.mu[arm]))
-        self.b[arm] = self.b_0 + b_update
+            self.yy[action] += reward ** 2
+            self.a[action] += 0.5
 
-        if self.it % self.L == 0 and len(self.E) > self.min_buffer_size:
+            b_update = 0.5 * self.yy[action]
+            b_update += 0.5 * torch.dot(self.mu_prior[:, action], torch.mv(self.precision_prior[action], self.mu_prior[:, action]))
+            b_update -= 0.5 * torch.dot(self.mu[action], torch.mv(self.precision[action], self.mu[action]))
+            self.b[action] = self.b_0 + b_update
+
+            if self.it % self.L == 0 and len(self.E) > self.min_buffer_size:
+                trigger_training = True
+
+        if trigger_training:
             old_features = [[] for _ in range(self.n_arms)]
             rewards_by_arm = [[] for _ in range(self.n_arms)]
 

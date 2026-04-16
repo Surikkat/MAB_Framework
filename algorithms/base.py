@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from typing import Union, List
+from typing import Union, List, Dict, Any
 from models.base import BaseModel
 
 class BaseAlgorithm(ABC):
@@ -13,5 +13,5 @@ class BaseAlgorithm(ABC):
         pass
 
     @abstractmethod
-    def update(self, context: np.ndarray, action: int, reward: float) -> None:
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
         pass

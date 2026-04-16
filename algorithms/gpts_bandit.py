@@ -4,6 +4,7 @@ Single-GP Thompson Sampling with RFF. Includes the original broadcasting bug
 where `np.outer(phi, phi)` is calculated with the full `context` instead of `context[arm]`.
 """
 import numpy as np
+from typing import List, Dict, Any
 from .base import BaseAlgorithm
 
 
@@ -56,9 +57,14 @@ class GPTSBandit(BaseAlgorithm):
         scores = phi_all @ theta
         return int(np.argmax(scores))
 
-    def update(self, context: np.ndarray, arm: int, reward: float):
-        phi = self._phi(context)  # The original bug: this embeds the entire (n_arms, d) context.
-        # This will raise a ValueError since phi is (n_arms, D), not (D,).
-        self.A += np.outer(phi, phi)
-        self.v += phi * reward
-        self.t += 1
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            x_a = context[action] if context.ndim > 1 else context
+            phi = self._phi(x_a)
+            self.A += np.outer(phi, phi)
+            self.v += phi * reward
+            self.t += 1
+

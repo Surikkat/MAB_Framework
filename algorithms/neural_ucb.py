@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict, Any
 from .base import BaseAlgorithm
 
 torch.set_default_dtype(torch.float32)
@@ -185,19 +185,25 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
 
         return int(np.argmax(utilities))
 
-    def update(self, context: np.ndarray, action: int, reward: float):
-        if context.ndim > 1:
-            x_chosen = context[action]
-        else:
-            x_chosen = context
+    def update(self, feedbacks: List[Dict[str, Any]]) -> None:
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            if context.ndim > 1:
+                x_chosen = context[action]
+            else:
+                x_chosen = context
 
-        self.history_X.append(x_chosen.astype(np.float32))
-        self.history_y.append(float(reward))
+            self.history_X.append(x_chosen.astype(np.float32))
+            self.history_y.append(float(reward))
 
-        g_vec = self._grad_wrt_params(x_chosen)
-        self.Z += np.outer(g_vec, g_vec) / float(self.m)
-        self._Z_inv_valid = False
-        self._train_nn()
+            g_vec = self._grad_wrt_params(x_chosen)
+            self.Z += np.outer(g_vec, g_vec) / float(self.m)
+            self._Z_inv_valid = False
+            
+        if len(feedbacks) > 0:
+            self._train_nn()
 
     def _train_nn(self):
         if len(self.history_y) == 0:

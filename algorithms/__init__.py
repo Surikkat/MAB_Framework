@@ -16,7 +16,7 @@ from .custom_ts_bandit import CustomTSBandit
 from .bootstrap_ts_bandit import BootstrapTSBandit
 from .sgd_ts_bandit import SGDTSBandit
 from .noncontextual_ts_bandit import NonContextualTSBandit
-from .regcb_bandit import RegcbBanit
+# from .regcb_bandit import RegcbBanit
 from .nn_bandit_limited_memory import NeuralBanditWithLimitedMemory_5
 from .gpts_bandit import GPTSBandit
 
