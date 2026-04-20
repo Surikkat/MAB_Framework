@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from typing import Union, List, Dict, Any
-from BanditLab.models.base import BaseModel
+from mab_framework.models.base import BaseModel
 
 class BaseAlgorithm(ABC):
     def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]]):

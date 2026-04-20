@@ -1,20 +1,22 @@
 import numpy as np
 from typing import Union, List, Dict, Any
 from .base import BaseAlgorithm
-from BanditLab.models.base import BaseModel
+from mab_framework.models.base import BaseModel
 
-class UCBAlgorithm(BaseAlgorithm):
-    def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]], alpha: float = 1.0):
+class EpsilonGreedy(BaseAlgorithm):
+    def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]], epsilon: float = 0.1):
         super().__init__(n_arms, model)
-        self.alpha = alpha
+        self.epsilon = epsilon
 
     def select_arm(self, context: np.ndarray) -> int:
-        ucb_values = []
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(self.n_arms)
+        values = []
         for a in range(self.n_arms):
             x_a = context[a] if context.ndim > 1 else context
-            mu, sigma = self.model[a].predict(x_a)
-            ucb_values.append(mu + self.alpha * sigma)
-        return int(np.argmax(ucb_values))
+            mu, _ = self.model[a].predict(x_a)
+            values.append(mu)
+        return int(np.argmax(values))
 
     def update(self, feedbacks: List[Dict[str, Any]]) -> None:
         for fb in feedbacks:
@@ -23,4 +25,3 @@ class UCBAlgorithm(BaseAlgorithm):
             context = fb["context"]
             x_a = context[action] if context.ndim > 1 else context
             self.model[action].fit(x_a, reward)
-

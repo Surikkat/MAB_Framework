@@ -7,19 +7,19 @@ from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from BanditLab.experiment.runner import ExperimentRunner
-from BanditLab.environments.dataset_env import DatasetEnvironment
-from BanditLab.models.fgts_lasso_model import FGTSLassoModel
-from BanditLab.models.linear_model import OnlineRidgeRegression
-from BanditLab.models.gp_rff_model import GPRFFModel
-from BanditLab.models.glm_laplace_model import GLMLaplaceModel
-from BanditLab.models.nn_agp_model import NNAGPModel
-from BanditLab.models.neural_network import NeuralLinearModel
+from mab_framework.experiment.runner import ExperimentRunner
+from mab_framework.environments.dataset_env import DatasetEnvironment
+from mab_framework.models.fgts_lasso_model import FGTSLassoModel
+from mab_framework.models.linear_model import OnlineRidgeRegression
+from mab_framework.models.gp_rff_model import GPRFFModel
+from mab_framework.models.glm_laplace_model import GLMLaplaceModel
+from mab_framework.models.nn_agp_model import NNAGPModel
+from mab_framework.models.neural_network import NeuralLinearModel
 
-from BanditLab.algorithms.thompson_sampling import ThompsonSampling
-from BanditLab.algorithms.ucb import UCBAlgorithm
-from BanditLab.algorithms.epsilon_greedy import EpsilonGreedy
-from BanditLab.algorithms.neural_ucb import NeuralUCBAlgorithm
+from mab_framework.algorithms.thompson_sampling import ThompsonSampling
+from mab_framework.algorithms.ucb import UCBAlgorithm
+from mab_framework.algorithms.epsilon_greedy import EpsilonGreedy
+from mab_framework.algorithms.neural_ucb import NeuralUCBAlgorithm
 
 N_RUNS = 5
 MAX_STEPS = 200

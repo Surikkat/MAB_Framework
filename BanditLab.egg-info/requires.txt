@@ -1,0 +1,14 @@
+numpy>=2.0
+pandas>=2.0
+scikit-learn>=1.3
+pyyaml>=6.0
+coba>=8.0
+
+[deep]
+torch>=2.0
+
+[optimization]
+cvxpy>=1.0
+
+[plots]
+matplotlib>=3.7

@@ -9,10 +9,10 @@ from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-from BanditLab.experiment.runner import ExperimentRunner
-import BanditLab.environments as environments
-import BanditLab.models as models
-import BanditLab.algorithms as algorithms
+from mab_framework.experiment.runner import ExperimentRunner
+import mab_framework.environments as environments
+import mab_framework.models as models
+import mab_framework.algorithms as algorithms
 
 def load_config(config_path):
     with open(config_path, 'r', encoding='utf-8') as f:

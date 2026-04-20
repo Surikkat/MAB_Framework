@@ -1,7 +1,7 @@
 import time
 import numpy as np
-from BanditLab.experiment.metrics import MetricsTracker
-from BanditLab.experiment.logger import Logger
+from mab_framework.experiment.metrics import MetricsTracker
+from mab_framework.experiment.logger import Logger
 
 class ExperimentRunner:
     def __init__(self, env, algorithm_factory, steps: int, n_runs: int = 1, output_file: str = "results.json"):

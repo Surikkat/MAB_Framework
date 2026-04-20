@@ -2,7 +2,7 @@ import math
 import numpy as np
 from typing import List, Dict, Any
 from .base import BaseAlgorithm
-from BanditLab.models.base import BaseModel
+from mab_framework.models.base import BaseModel
 
 
 class NNAGPUCBAlgorithm(BaseAlgorithm):

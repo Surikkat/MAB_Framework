@@ -7,12 +7,12 @@ from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from BanditLab.experiment.runner import ExperimentRunner
-from BanditLab.environments.dataset_env import DatasetEnvironment
-from BanditLab.models.nn_agp_model import NNAGPModel
-from BanditLab.models.linear_model import OnlineRidgeRegression
-from BanditLab.algorithms.nn_agp_ucb import NNAGPUCBAlgorithm
-from BanditLab.algorithms.ucb import UCBAlgorithm
+from mab_framework.experiment.runner import ExperimentRunner
+from mab_framework.environments.dataset_env import DatasetEnvironment
+from mab_framework.models.nn_agp_model import NNAGPModel
+from mab_framework.models.linear_model import OnlineRidgeRegression
+from mab_framework.algorithms.nn_agp_ucb import NNAGPUCBAlgorithm
+from mab_framework.algorithms.ucb import UCBAlgorithm
 
 N_RUNS = 2
 MAX_STEPS = 200

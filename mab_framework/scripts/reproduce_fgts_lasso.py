@@ -7,48 +7,39 @@ from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from BanditLab.experiment.runner import ExperimentRunner
-from BanditLab.environments.dataset_env import DatasetEnvironment
-from BanditLab.models.gp_rff_model import GPRFFModel
-from BanditLab.models.glm_laplace_model import GLMLaplaceModel
-from BanditLab.models.linear_model import OnlineRidgeRegression
-from BanditLab.algorithms.thompson_sampling import ThompsonSampling
-from BanditLab.algorithms.ucb import UCBAlgorithm
+from mab_framework.experiment.runner import ExperimentRunner
+from mab_framework.environments.dataset_env import DatasetEnvironment
+from mab_framework.models.fgts_lasso_model import FGTSLassoModel
+from mab_framework.models.linear_model import OnlineRidgeRegression
+from mab_framework.algorithms.thompson_sampling import ThompsonSampling
+from mab_framework.algorithms.ucb import UCBAlgorithm
+from mab_framework.algorithms.epsilon_greedy import EpsilonGreedy
 
-N_RUNS = 2
-MAX_STEPS = 500
+N_RUNS = 3
 
 def main():
     mab_root = Path(__file__).parents[1]
-    data_path = mab_root.parent / "cMAB_bandits" / "data" / "data_5000.csv"
+    data_path = mab_root.parent / "FGTS_LASSO" / "data" / "exp_10_2"
 
     if not data_path.exists():
-        print(f"Data not found: {data_path}")
         return
 
-    env = DatasetEnvironment(dataset_path=str(data_path), max_steps=MAX_STEPS)
+    env = DatasetEnvironment(dataset_path=str(data_path))
     n_arms = env.n_arms
-    feature_dim = env.contexts_per_step.shape[2]
+    feature_dim = env.contexts.shape[1]
     steps = env.T
 
-    results_dir = mab_root / "experiment" / "cmab_bandits"
-    plots_dir = mab_root / "plots" / "cmab_bandits"
+    results_dir = mab_root / "experiment" / "fgts_lasso"
+    plots_dir = mab_root / "plots" / "fgts_lasso"
     results_dir.mkdir(parents=True, exist_ok=True)
     plots_dir.mkdir(parents=True, exist_ok=True)
 
     configs = [
         {
-            "name": "GP-TS-RFF",
+            "name": "FGTS-LASSO",
             "algo_factory": lambda: ThompsonSampling(
                 n_arms=n_arms,
-                model=[GPRFFModel(feature_dim=feature_dim, n_features=200, nu0=1.0) for _ in range(n_arms)]
-            ),
-        },
-        {
-            "name": "GLM-TS-Laplace",
-            "algo_factory": lambda: ThompsonSampling(
-                n_arms=n_arms,
-                model=[GLMLaplaceModel(feature_dim=feature_dim, alpha=1.0) for _ in range(n_arms)]
+                model=[FGTSLassoModel(feature_dim=feature_dim, lasso_start=100) for _ in range(n_arms)]
             ),
         },
         {
@@ -57,6 +48,14 @@ def main():
                 n_arms=n_arms,
                 model=[OnlineRidgeRegression(feature_dim=feature_dim) for _ in range(n_arms)],
                 alpha=1.0
+            ),
+        },
+        {
+            "name": "Epsilon-Greedy",
+            "algo_factory": lambda: EpsilonGreedy(
+                n_arms=n_arms,
+                model=[OnlineRidgeRegression(feature_dim=feature_dim) for _ in range(n_arms)],
+                epsilon=0.1
             ),
         },
     ]
@@ -80,22 +79,19 @@ def main():
         plt.plot(data["cumulative_regret_mean"], label=name, linewidth=2.5)
     plt.xlabel("Round t", fontsize=14)
     plt.ylabel("Cumulative Regret", fontsize=14)
-    plt.title("Paper 3: cMAB (data_5000)", fontsize=16, fontweight='bold')
+    plt.title("Paper 1: FGTS-LASSO (exp_10_2)", fontsize=16, fontweight='bold')
     plt.legend(fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.savefig(plots_dir / "cumulative_regret.png", dpi=300)
     plt.close()
 
-    t_range = np.arange(1, steps + 1)
     plt.figure(figsize=(12, 7))
     for name, data in all_results.items():
-        regrets = np.array(data["cumulative_regret_mean"])
-        avg_regret = regrets / t_range
-        plt.plot(avg_regret, label=name, linewidth=2.5)
+        plt.plot(data["average_regret_mean"], label=name, linewidth=2.5)
     plt.xlabel("Round t", fontsize=14)
     plt.ylabel("Average Regret", fontsize=14)
-    plt.title("Paper 3: cMAB (data_5000)", fontsize=16, fontweight='bold')
+    plt.title("Paper 1: FGTS-LASSO (exp_10_2)", fontsize=16, fontweight='bold')
     plt.legend(fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()

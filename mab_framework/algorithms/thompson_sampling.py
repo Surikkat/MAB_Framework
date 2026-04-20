@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Union, List, Dict, Any
 from .base import BaseAlgorithm
-from BanditLab.models.base import BaseModel
+from mab_framework.models.base import BaseModel
 
 class ThompsonSampling(BaseAlgorithm):
     def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]]):
