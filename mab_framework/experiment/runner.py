@@ -1,15 +1,29 @@
 import time
+import json
+import random
+import os
 import numpy as np
 from mab_framework.experiment.metrics import MetricsTracker
 from mab_framework.experiment.logger import Logger
 
+
 class ExperimentRunner:
-    def __init__(self, env, algorithm_factory, steps: int, n_runs: int = 1, output_file: str = "results.json"):
+    def __init__(self, env, algorithm_factory, steps: int, n_runs: int = 1,
+                 output_file: str = None, seed: int = None,
+                 save_dir: str = None, metadata: dict = None):
         self.env = env
         self.algorithm_factory = algorithm_factory
         self.steps = steps
         self.n_runs = n_runs
-        self.logger = Logger(output_file)
+        self.output_file = output_file
+        self.seed = seed
+        self.save_dir = save_dir
+        self.metadata = metadata or {}
+
+    def _get_run_seed(self, run_idx):
+        if self.seed is not None:
+            return self.seed + run_idx
+        return run_idx
 
     def run(self):
         all_runs_metrics = {
@@ -21,12 +35,17 @@ class ExperimentRunner:
         }
 
         for run in range(self.n_runs):
-            np.random.seed(run)
+            run_seed = self._get_run_seed(run)
+            random.seed(run_seed)
+            np.random.seed(run_seed)
             try:
                 import torch
-                torch.manual_seed(run)
+                torch.manual_seed(run_seed)
+                if torch.cuda.is_available():
+                    torch.cuda.manual_seed_all(run_seed)
             except ImportError:
                 pass
+
             if hasattr(self.env, 'reset'):
                 self.env.reset()
 
@@ -55,7 +74,6 @@ class ExperimentRunner:
 
                 iter_time = time.time() - start_time
                 regret = optimal_reward - reward
-
                 tracker.add(reward, regret, iter_time)
 
             metrics = tracker.get_metrics()
@@ -65,11 +83,36 @@ class ExperimentRunner:
             all_runs_metrics["rewards"].append(metrics["rewards"])
             all_runs_metrics["times"].append(metrics["times"])
 
-        aggregated_results = {}
+            if self.save_dir:
+                self._save_run(run, run_seed, metrics)
+
+        aggregated = {}
         for key, value in all_runs_metrics.items():
             arr = np.array(value)
-            aggregated_results[f"{key}_mean"] = np.mean(arr, axis=0).tolist()
-            aggregated_results[f"{key}_std"] = np.std(arr, axis=0).tolist()
-            aggregated_results[f"{key}_raw"] = arr.tolist()
+            aggregated[f"{key}_mean"] = np.mean(arr, axis=0).tolist()
+            aggregated[f"{key}_std"] = np.std(arr, axis=0).tolist()
 
-        self.logger.log(aggregated_results)
+        if self.output_file:
+            logger = Logger(self.output_file)
+            full = dict(aggregated)
+            for key, value in all_runs_metrics.items():
+                full[f"{key}_raw"] = np.array(value).tolist()
+            logger.log(full)
+
+        return aggregated
+
+    def _save_run(self, run_idx, run_seed, metrics):
+        os.makedirs(self.save_dir, exist_ok=True)
+        run_data = {
+            **self.metadata,
+            "seed": run_seed,
+            "run_id": run_idx,
+            "metrics": {
+                "cumulative_regret": metrics["cumulative_regret"],
+                "average_regret": metrics["average_regret"],
+            },
+            "runtime": round(sum(metrics["times"]), 4),
+        }
+        path = os.path.join(self.save_dir, f"run_{run_idx}.json")
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(run_data, f, indent=2)

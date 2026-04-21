@@ -1,3 +1,18 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-python3 "$DIR/run.py" "$@"
+ROOT="$(dirname "$DIR")"
+export PYTHONPATH="$ROOT:$PYTHONPATH"
+
+if [ "$1" = "benchmark" ]; then
+    BENCH_NAME="$2"
+    CONFIG=$(find "$DIR/benchmarks" -name "${BENCH_NAME}.yaml" 2>/dev/null | head -1)
+    if [ -z "$CONFIG" ]; then
+        echo "Benchmark '$BENCH_NAME' not found in $DIR/benchmarks/"
+        echo "Available benchmarks:"
+        find "$DIR/benchmarks" -name "*.yaml" -exec basename {} .yaml \;
+        exit 1
+    fi
+    python3 "$DIR/run.py" "$CONFIG"
+else
+    python3 "$DIR/run.py" "$@"
+fi

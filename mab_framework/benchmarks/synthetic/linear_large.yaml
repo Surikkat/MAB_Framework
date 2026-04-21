@@ -1,0 +1,58 @@
+experiment:
+  name: "synthetic_linear_large"
+  steps: 2000
+  n_runs: 10
+  seed: 42
+
+environment:
+  name: "DatasetEnvironment"
+  params:
+    dataset_path: "mab_framework/data/E1_dataset.npz"
+
+algorithms:
+  - name: "ThompsonSampling"
+    display_name: "Thompson Sampling"
+    params: {}
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+  - name: "UCBAlgorithm"
+    display_name: "LinUCB (alpha=0.1)"
+    params: { alpha: 0.1 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+  - name: "UCBAlgorithm"
+    display_name: "LinUCB (alpha=1.0)"
+    params: { alpha: 1.0 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+  - name: "EpsilonGreedy"
+    display_name: "Eps-Greedy (eps=0.01)"
+    params: { epsilon: 0.01 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+  - name: "EpsilonGreedy"
+    display_name: "Eps-Greedy (eps=0.1)"
+    params: { epsilon: 0.1 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+metrics:
+  - cumulative_regret
+  - average_regret
+
+output:
+  save_path: "./results/synthetic_linear_large"
