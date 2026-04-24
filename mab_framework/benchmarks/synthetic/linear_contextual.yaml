@@ -1,7 +1,7 @@
 experiment:
-  name: "synthetic_linear_large"
-  steps: 2000
-  n_runs: 10
+  name: "linear_contextual"
+  steps: 200
+  n_runs: 5
   seed: 42
 
 environment:
@@ -19,14 +19,6 @@ algorithms:
       one_model_per_arm: true
 
   - name: "UCBAlgorithm"
-    display_name: "LinUCB (alpha=0.1)"
-    params: { alpha: 0.1 }
-    model:
-      name: "OnlineRidgeRegression"
-      params: { l2_reg: 1.0 }
-      one_model_per_arm: true
-
-  - name: "UCBAlgorithm"
     display_name: "LinUCB (alpha=1.0)"
     params: { alpha: 1.0 }
     model:
@@ -34,9 +26,9 @@ algorithms:
       params: { l2_reg: 1.0 }
       one_model_per_arm: true
 
-  - name: "EpsilonGreedy"
-    display_name: "Eps-Greedy (eps=0.01)"
-    params: { epsilon: 0.01 }
+  - name: "UCBAlgorithm"
+    display_name: "LinUCB (alpha=0.1)"
+    params: { alpha: 0.1 }
     model:
       name: "OnlineRidgeRegression"
       params: { l2_reg: 1.0 }
@@ -50,9 +42,16 @@ algorithms:
       params: { l2_reg: 1.0 }
       one_model_per_arm: true
 
+  - name: "BootstrapTSBandit"
+    display_name: "Bootstrap TS"
+    params:
+      d: 5
+      n_models: 10
+      lr: 0.01
+
 metrics:
   - cumulative_regret
   - average_regret
 
 output:
-  save_path: "./results/synthetic_linear_large"
+  save_path: "./results/linear_contextual"

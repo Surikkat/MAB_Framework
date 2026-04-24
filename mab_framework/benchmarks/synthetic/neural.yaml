@@ -1,0 +1,85 @@
+experiment:
+  name: "neural"
+  steps: 200
+  n_runs: 3
+  seed: 42
+
+environment:
+  name: "DatasetEnvironment"
+  params:
+    dataset_path: "mab_framework/data/E1_dataset.npz"
+
+algorithms:
+  - name: "NeuralUCBAlgorithm"
+    display_name: "NeuralUCB"
+    params:
+      input_dim: 5
+      T: 200
+      m: 32
+      L: 2
+      nu: 1.0
+      lambd: 1.0
+      J: 10
+      eta: 0.001
+
+  - name: "NNUCBAlgorithm"
+    display_name: "NN-UCB (diag)"
+    params:
+      context_dim: 5
+      hidden_width: 64
+      hidden_layers: 2
+      beta: 1.0
+      J: 10
+
+  - name: "NNTSBAlgorithm"
+    display_name: "NN-TS-B"
+    params:
+      d: 5
+      v: 0.1
+      width: 10
+      depth: 2
+
+  - name: "NeuralBanditWithLimitedMemory_5"
+    display_name: "Neural Bandit (LimitedMem)"
+    params:
+      buffer_size: 100
+      min_buffer_size: 20
+      g: 16
+      L: 10
+      input_dim: 5
+      P: 50
+
+  - name: "NNAGPUCBAlgorithm"
+    display_name: "NN-AGP-UCB"
+    params:
+      beta: 2.0
+    model:
+      name: "NNAGPModel"
+      params:
+        theta_dim: 0
+        x_dim: 5
+        m: 5
+      one_model_per_arm: false
+
+  - name: "NNAGPUCBAdaptiveAlgorithm"
+    display_name: "NN-AGP-UCB (adaptive)"
+    params:
+      theta_dim: 0
+      x_dim: 5
+      m: 5
+      beta: 2.0
+
+  - name: "ThompsonSampling"
+    display_name: "LinTS (baseline)"
+    params: {}
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+metrics:
+  - cumulative_regret
+  - average_regret
+
+output:
+  save_path: "./results/neural"

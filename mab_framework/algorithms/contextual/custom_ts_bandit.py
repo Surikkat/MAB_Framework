@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List, Dict, Any
-from .base import BaseAlgorithm
+from ..base import BaseAlgorithm
 
 
 class CustomTSBandit(BaseAlgorithm):

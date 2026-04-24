@@ -1,5 +1,5 @@
 experiment:
-  name: "synthetic_linear_small"
+  name: "noncontextual"
   steps: 200
   n_runs: 5
   seed: 42
@@ -10,25 +10,32 @@ environment:
     dataset_path: "mab_framework/data/E1_dataset.npz"
 
 algorithms:
-  - name: "ThompsonSampling"
-    display_name: "Thompson Sampling"
-    params: {}
-    model:
-      name: "OnlineRidgeRegression"
-      params: { l2_reg: 1.0 }
-      one_model_per_arm: true
+  - name: "NonContextualTSBandit"
+    display_name: "Non-Contextual TS"
+    params:
+      prior_mean: 0.0
+      prior_var: 1.0
+      reward_var: 1.0
 
-  - name: "UCBAlgorithm"
-    display_name: "LinUCB (alpha=1.0)"
-    params: { alpha: 1.0 }
+  - name: "EpsilonGreedy"
+    display_name: "Eps-Greedy (eps=0.1)"
+    params: { epsilon: 0.1 }
     model:
       name: "OnlineRidgeRegression"
       params: { l2_reg: 1.0 }
       one_model_per_arm: true
 
   - name: "EpsilonGreedy"
-    display_name: "Eps-Greedy (eps=0.1)"
-    params: { epsilon: 0.1 }
+    display_name: "Eps-Greedy (eps=0.01)"
+    params: { epsilon: 0.01 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+  - name: "UCBAlgorithm"
+    display_name: "UCB (alpha=1.0)"
+    params: { alpha: 1.0 }
     model:
       name: "OnlineRidgeRegression"
       params: { l2_reg: 1.0 }
@@ -39,4 +46,4 @@ metrics:
   - average_regret
 
 output:
-  save_path: "./results/synthetic_linear_small"
+  save_path: "./results/noncontextual"

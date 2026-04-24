@@ -1,0 +1,68 @@
+experiment:
+  name: "glm_feature"
+  steps: 200
+  n_runs: 5
+  seed: 42
+
+environment:
+  name: "DatasetEnvironment"
+  params:
+    dataset_path: "mab_framework/data/E1_dataset.npz"
+
+algorithms:
+  - name: "SGDTSBandit"
+    display_name: "SGD-TS"
+    params:
+      d: 5
+      K: 50
+      nu: 0.1
+      lr: 0.01
+      warmup_steps: 50
+
+  - name: "GPTSBandit"
+    display_name: "GP-TS (RFF)"
+    params:
+      d: 5
+      n_features: 200
+      lambda_prior: 1.0
+
+  - name: "GPUCBKernelFlexibleAlgorithm"
+    display_name: "GP-UCB (multiplicative)"
+    params:
+      x_dim: 5
+      theta_dim: 0
+      beta: 2.0
+      kernel_type: "multiplicative"
+
+  - name: "ThompsonSampling"
+    display_name: "TS + GLM-Laplace"
+    params: {}
+    model:
+      name: "GLMLaplaceModel"
+      params: { prior_var: 1.0 }
+      one_model_per_arm: true
+
+  - name: "UCBAlgorithm"
+    display_name: "UCB + GLM-Laplace"
+    params: { alpha: 1.0 }
+    model:
+      name: "GLMLaplaceModel"
+      params: { prior_var: 1.0 }
+      one_model_per_arm: true
+
+  - name: "CustomTSBandit"
+    display_name: "Custom TS"
+    params:
+      context_dim: 5
+      dist_type: "normal"
+    model:
+      name: "LinearNormalModel"
+      params: {}
+      one_model_per_arm: false
+
+metrics:
+  - cumulative_regret
+  - average_regret
+
+output:
+  save_path: "./results/glm_feature"
