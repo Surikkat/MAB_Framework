@@ -114,6 +114,27 @@ class CSVDatasetEnv(BaseDatasetEnvironment):
         self.thetas = None
         self.X_pool = None
 
+class JSONDatasetEnv(BaseDatasetEnvironment):
+    def _load_dataset(self):
+        df = pd.read_json(self.dataset_path)
+        ctx_cols = sorted([c for c in df.columns if c.startswith('context_')])
+        self.n_arms = df['arm'].nunique()
+        self.T = df['t'].nunique()
+
+        contexts_all = []
+        rewards_all = []
+        for t_val in sorted(df['t'].unique()):
+            t_df = df[df['t'] == t_val].sort_values('arm')
+            contexts_all.append(t_df[ctx_cols].values)
+            rewards_all.append(t_df['reward'].values)
+
+        self.contexts_per_step = np.array(contexts_all)
+        self.rewards = np.array(rewards_all)
+        self.dynamic_context = True
+        self.context_mode = 'per_arm_per_step'
+        self.thetas = None
+        self.X_pool = None
+
 def DatasetEnvironment(dataset_path: str, max_steps: int = None, **kwargs):
     if os.path.isdir(dataset_path):
         return FolderDatasetEnv(dataset_path, max_steps, **kwargs)
@@ -121,6 +142,8 @@ def DatasetEnvironment(dataset_path: str, max_steps: int = None, **kwargs):
         return NPZDatasetEnv(dataset_path, max_steps, **kwargs)
     elif dataset_path.endswith('.csv'):
         return CSVDatasetEnv(dataset_path, max_steps, **kwargs)
+    elif dataset_path.endswith('.json'):
+        return JSONDatasetEnv(dataset_path, max_steps, **kwargs)
     else:
         raise ValueError(f"Unknown dataset format for path: {dataset_path}")
 

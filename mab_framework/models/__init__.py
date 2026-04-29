@@ -16,3 +16,5 @@ from .decoupled_fgts_model import DecoupledFGTSModel
 
 # Added from Batch 4
 from .cmab_models import LinearNormalModel, GLMNormalModel, NeuralNormalModel
+from .sgd_model import SGDModel
+from .bootstrap_model import BootstrapEnsembleModel

@@ -1,0 +1,46 @@
+experiment:
+  name: "Delayed Feedback Showcase"
+  steps: 500
+  n_runs: 2
+  device: "cpu"
+  seed: 42
+
+environment:
+  name: "SyntheticLinearEnv"
+  delay:
+    type: "fixed"
+    value: 5
+  params:
+    n_arms: 5
+    context_dim: 10
+    noise_std: 0.1
+
+algorithms:
+  - name: "UCBAlgorithm"
+    display_name: "Delayed UCB"
+    model:
+      name: "OnlineRidgeRegression"
+      one_model_per_arm: true
+      params:
+        feature_dim: 10
+        l2_reg: 1.0
+    params:
+      alpha: 1.0
+
+  - name: "EpsilonGreedy"
+    display_name: "Delayed Epsilon Greedy"
+    model:
+      name: "OnlineRidgeRegression"
+      one_model_per_arm: true
+      params:
+        feature_dim: 10
+        l2_reg: 1.0
+    params:
+      epsilon: 0.1
+
+metrics:
+  - "cumulative_regret"
+  - "runtime"
+
+output:
+  save_path: "experiment/results_delayed"
