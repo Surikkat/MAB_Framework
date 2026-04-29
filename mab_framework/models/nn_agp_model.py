@@ -41,9 +41,10 @@ class NNAGPModel(BaseModel):
         init_noise: float = 0.05,
         lr: float = 1e-3,
         mll_steps: int = 60,
-        jitter: float = 1e-6
+        jitter: float = 1e-6,
+        device: str = "cpu"
     ):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(device)
         self.theta_dim = theta_dim
         self.x_dim = x_dim
         self.m = int(m)
@@ -151,7 +152,10 @@ class NNAGPModel(BaseModel):
         self.Xs_hist.append(torch.tensor(arm_x, dtype=torch.float32, device=self.device))
         self.ys_hist.append(torch.tensor([y], dtype=torch.float32, device=self.device))
         if not delay_fit:
-            self._fit_mll()
+            self.finalize_update()
+
+    def finalize_update(self) -> None:
+        self._fit_mll()
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Returns (mu, sigma²) — variance, not std — matching original posterior()."""

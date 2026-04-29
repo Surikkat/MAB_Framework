@@ -15,8 +15,9 @@ class NNTSBAlgorithm(BaseAlgorithm):
     """Exact port of cMAB_bandits/bandits/nn_ts_b.py NN_TS_B class."""
     def __init__(self, n_arms: int, d: int, v: float = 0.1, width: int = 10, depth: int = 2,
                  reg: float = 1, e: float = 0.01, lr: float = 0.01,
-                 stop_rounds: int = 1000, max_steps: int = 100, model=None):
+                 stop_rounds: int = 1000, max_steps: int = 100, buffer_size: int = 1000, model=None):
         super().__init__(n_arms, model)
+        self.buffer_size = buffer_size
         self.max_steps = max_steps
         self.current_round = 0
         self.stop_rounds = stop_rounds
@@ -99,6 +100,10 @@ class NNTSBAlgorithm(BaseAlgorithm):
             self.rewards[action].append(reward)
             self.contexts[action].append(ctx_t)
             new_feedbacks_by_action[action].append(ctx_t)
+            
+            if len(self.rewards[action]) > self.buffer_size:
+                self.rewards[action] = self.rewards[action][-self.buffer_size:]
+                self.contexts[action] = self.contexts[action][-self.buffer_size:]
 
         for action, new_ctxs in new_feedbacks_by_action.items():
             if len(new_ctxs) == 0:
