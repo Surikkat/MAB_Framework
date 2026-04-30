@@ -1,5 +1,5 @@
 from coba.learners import VowpalRegcbLearner
-from .base import BaseAlgorithm
+from ..base import BaseAlgorithm
 import numpy as np
 from typing import List, Dict, Any
 

@@ -1,3 +1,6 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+ROOT="$(dirname "$DIR")"
+export PYTHONPATH="$ROOT:$PYTHONPATH"
+
 python3 "$DIR/run.py" "$@"

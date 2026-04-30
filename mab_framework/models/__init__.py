@@ -6,6 +6,8 @@ from .neural_network import NeuralLinearModel
 from .nn_agp_model import NNAGPModel
 from .gp_rff_model import GPRFFModel
 from .glm_laplace_model import GLMLaplaceModel
+from .neural_ucb_model import NeuralUCBModel
+from .nn_ucb_model import NNUCBModel
 
 # Added from Batch 2
 from .kernel_ucb_model import KernelUCBModel
@@ -14,3 +16,5 @@ from .decoupled_fgts_model import DecoupledFGTSModel
 
 # Added from Batch 4
 from .cmab_models import LinearNormalModel, GLMNormalModel, NeuralNormalModel
+from .sgd_model import SGDModel
+from .bootstrap_model import BootstrapEnsembleModel

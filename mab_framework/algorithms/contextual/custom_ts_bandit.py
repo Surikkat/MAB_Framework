@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List, Dict, Any
-from .base import BaseAlgorithm
+from ..base import BaseAlgorithm
 
 
 class CustomTSBandit(BaseAlgorithm):
@@ -53,7 +53,8 @@ class CustomTSBandit(BaseAlgorithm):
             action = fb["action"]
             reward = fb["reward"]
             context = fb["context"]
-            context_transformed = self._transform(context)
+            ctx = context[action] if context.ndim > 1 else context
+            context_transformed = self._transform(ctx)
             self.model.partial_fit(context_transformed, action, reward)
 
     def train(self):

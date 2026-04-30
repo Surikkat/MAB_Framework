@@ -7,7 +7,6 @@ environment:
   name: "DatasetEnvironment"
   params:
     dataset_path: "data/E1_dataset.npz"
-  delay
 
 algorithms:
   - name: "ThompsonSampling"

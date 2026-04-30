@@ -8,8 +8,8 @@ from typing import List, Dict, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from .base import BaseAlgorithm
-from mab_framework.models.nn_agp_model import _NeuralEmbedding, _rbf_kernel_matrix
+from ..base import BaseAlgorithm
+from ...models.nn_agp_model import _NeuralEmbedding, _rbf_kernel_matrix
 
 
 class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):

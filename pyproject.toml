@@ -23,8 +23,11 @@ deep = ["torch>=2.0"]
 optimization = ["cvxpy>=1.0"]
 plots = ["matplotlib>=3.7"]
 
-[tool.setuptools]
-packages = ["mab_framework"]
+[tool.setuptools.packages.find]
+include = ["mab_framework*"]
+
+[project.scripts]
+bandit = "mab_framework.run:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

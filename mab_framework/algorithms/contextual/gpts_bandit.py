@@ -5,7 +5,7 @@ where `np.outer(phi, phi)` is calculated with the full `context` instead of `con
 """
 import numpy as np
 from typing import List, Dict, Any
-from .base import BaseAlgorithm
+from ..base import BaseAlgorithm
 
 
 class GPTSBandit(BaseAlgorithm):

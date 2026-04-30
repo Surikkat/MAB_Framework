@@ -7,7 +7,7 @@ from torch.optim import Adam
 import cvxpy as cp
 from scipy.stats import invgamma
 
-from .base import BaseAlgorithm
+from ..base import BaseAlgorithm
 
 import warnings
 warnings.filterwarnings("ignore")

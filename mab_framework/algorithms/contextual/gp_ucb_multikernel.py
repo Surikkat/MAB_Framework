@@ -6,7 +6,7 @@ import math
 import numpy as np
 from typing import List, Dict, Any
 from scipy.linalg import cho_solve, cho_factor
-from .base import BaseAlgorithm
+from ..base import BaseAlgorithm
 
 
 class GPUCBKernelFlexibleAlgorithm(BaseAlgorithm):
