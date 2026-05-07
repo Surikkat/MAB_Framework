@@ -3,6 +3,15 @@ from scipy.special import expit
 from .base import BaseModel
 
 class SGDModel(BaseModel):
+    """
+    Online Logistic Regression model trained via SGD.
+    
+    References
+    ----------
+    Ding, W., Qi, Y., Lattimore, T., Zou, J., & Kpotufe, S. (2021). 
+    "Provably efficient online Thompson sampling with linear payoffs 
+    via stochastic gradient descent." arXiv preprint arXiv:2109.11762.
+    """
     def __init__(self, feature_dim: int, nu: float = 0.1, lr: float = 0.01, lambda_prior: float = 1.0, warmup_steps: int = 50, mle_lr: float = 0.1, mle_steps: int = 500):
         self.d = feature_dim
         self.nu = nu

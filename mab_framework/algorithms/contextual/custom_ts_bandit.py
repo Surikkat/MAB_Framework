@@ -4,6 +4,15 @@ from ..base import BaseAlgorithm
 
 
 class CustomTSBandit(BaseAlgorithm):
+    """
+    Custom Thompson Sampling Bandit with reward-space sampling.
+    
+    References
+    ----------
+    Suraveikin, E., Omirzak, D., Sultimov, R., & Maximov, Y. (2026). 
+    "Efficient Contextual Bandit Learning via Reward-Space Sampling 
+    and Online Optimization." AAAI.
+    """
     def __init__(self, model, n_arms, context_dim, dist_type="normal", use_hashing=False, hash_dim=None, random_state=42):
         super().__init__(n_arms, model)
         self.dist_type = dist_type

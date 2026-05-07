@@ -1,17 +1,11 @@
-"""NN_UCB — exact reproduction of NN_AGP/bandits/nn_ucb.py.
-
-Diagonal approximation NN-UCB with gradient features.
-This has been decoupled to interact solely with BaseAlgorithms.
-"""
 import numpy as np
 from typing import List, Dict, Any
 from ..base import BaseAlgorithm
 
 
 class NNUCBAlgorithm(BaseAlgorithm):
-    """Exact port of NN_AGP/bandits/nn_ucb.py NN_UCB class decoupled from PyTorch.
-
-    Uses diagonal approximation for confidence (A_diag instead of full matrix).
+    """
+    Diagonal approximation NN-UCB with gradient features.
     """
     def __init__(self,
                  n_arms: int,

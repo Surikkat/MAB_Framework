@@ -1,12 +1,16 @@
-"""KernelUCB model — exact reproduction of FGTS_LASSO/kernelUCB.py.
-
-Stores per-arm history and uses RBF kernel for UCB.
-"""
 import numpy as np
 from .base import BaseModel
 
 
 class KernelUCBModel(BaseModel):
+    """
+    Kernel UCB Model using RBF kernel for uncertainty estimation.
+    
+    References
+    ----------
+    Valko, M., Korda, N., Munos, R., Flaounas, I., & Cristianini, N. (2013). 
+    "Finite-time analysis of kernelised contextual bandits." UAI.
+    """
     def __init__(self, kernel='rbf', gamma: float = 1.0, lam: float = 1e-3, beta: float = 1.0):
         self.kernel = kernel
         self.gamma = gamma

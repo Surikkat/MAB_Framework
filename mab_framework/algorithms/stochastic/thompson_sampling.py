@@ -4,6 +4,14 @@ from ..base import BaseAlgorithm
 from mab_framework.models.base import BaseModel
 
 class ThompsonSampling(BaseAlgorithm):
+    """
+    Thompson Sampling for Contextual Bandits.
+    
+    References
+    ----------
+    Agrawal, S., & Goyal, N. (2013). "Thompson Sampling for Contextual Bandits 
+    with Linear Payoffs." ICML.
+    """
     def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]]):
         super().__init__(n_arms, model)
 

@@ -1,12 +1,11 @@
-"""ExactGPModel — exact reproduction of FGTS_LASSO/gp_ts.py.
-
-Full GP with RBF kernel (O(n³) inverse per step). Per-arm history.
-"""
 import numpy as np
 from .base import BaseModel
 
 
 class ExactGPModel(BaseModel):
+    """
+    Exact Gaussian Process Model with RBF kernel and per-arm history.
+    """
     def __init__(self, gamma: float = 1.0, sigma_noise: float = 0.1, window_size: int = None):
         self.gamma = gamma
         self.sigma_noise = sigma_noise

@@ -4,6 +4,14 @@ from ..base import BaseAlgorithm
 from mab_framework.models.base import BaseModel
 
 class EpsilonGreedy(BaseAlgorithm):
+    """
+    Epsilon-Greedy Exploration Algorithm.
+    
+    References
+    ----------
+    Sutton, R. S., & Barto, A. G. (2018). 
+    "Reinforcement Learning: An Introduction." MIT Press.
+    """
     def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]], epsilon: float = 0.1):
         super().__init__(n_arms, model)
         self.epsilon = epsilon

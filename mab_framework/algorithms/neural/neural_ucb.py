@@ -1,14 +1,16 @@
-"""NeuralUCB — exact reproduction of NN_AGP/bandits/neural_ucb.py.
-
-Full gradient-based NeuralUCB with Z-matrix and gamma_t computation.
-This has been decoupled to interact solely with BaseAlgorithms.
-"""
 import numpy as np
 from typing import Optional, List, Dict, Any
 from ..base import BaseAlgorithm
 
 class NeuralUCBAlgorithm(BaseAlgorithm):
-    """Exact port of NN_AGP/bandits/neural_ucb.py NeuralUCB class decoupled from PyTorch."""
+    """
+    Neural Contextual Bandits with UCB-based Exploration.
+    
+    References
+    ----------
+    Zhou, D., Li, L., & Gu, Q. (2020). "Neural Contextual Bandits with 
+    UCB-based Exploration." ICML.
+    """
     def __init__(self,
                  n_arms: int,
                  model,

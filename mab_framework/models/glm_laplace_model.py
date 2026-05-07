@@ -4,6 +4,14 @@ from .base import BaseModel
 
 
 class GLMLaplaceModel(BaseModel):
+    """
+    Generalized Linear Model (GLM) with Laplace Approximation.
+    
+    References
+    ----------
+    Filippi, S., Cappe, O., Garivier, A., & Szepesvari, C. (2010). 
+    "Parametric Bandits: The Generalized Linear Case." NeurIPS.
+    """
     def __init__(self, feature_dim: int, prior_var: float = 1.0, lr: float = 0.1, alpha: float = 1.0):
         self.d = feature_dim
         self.prior_var = prior_var

@@ -1,9 +1,8 @@
-"""LinUCB Algorithm.
+"""
+Linear Upper Confidence Bound (LinUCB) Algorithm.
 
-LinUCB is mathematically identical to the generic UCB algorithm
-when paired with OnlineRidgeRegression as the model. Both compute
-UCB = mu + alpha * sigma. This module re-exports UCBAlgorithm
-for backward compatibility.
+This module re-exports UCBAlgorithm for backward compatibility 
+when paired with OnlineRidgeRegression.
 """
 from .ucb import UCBAlgorithm
 

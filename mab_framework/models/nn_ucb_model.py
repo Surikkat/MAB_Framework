@@ -21,8 +21,12 @@ class _SimpleMLP(nn.Module):
 
 class NNUCBModel(BaseModel):
     """
-    Decoupled NN-UCB Model responsible for tracking histories and training _SimpleMLP.
-    Matches the exact training mathematics from the original NN_UCB algorithm.
+    Neural Network Model for NN-UCB with diagonal Fisher Matrix approximation.
+
+    References
+    ----------
+    Zhou, D., Li, L., & Gu, Q. (2020). "Neural Contextual Bandits with 
+    UCB-based Exploration." ICML.
     """
     def __init__(self, feature_dim: int, hidden_width: int = 256,
                  hidden_layers: int = 2, J: int = 10, lr: float = 1e-3, 

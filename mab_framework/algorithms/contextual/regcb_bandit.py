@@ -4,7 +4,18 @@ import numpy as np
 from typing import List, Dict, Any
 
 
-class RegcbBanit(BaseAlgorithm):
+class RegCBBandit(BaseAlgorithm):
+    """
+    Regression-based Contextual Bandit (RegCB) Algorithm.
+
+    A contextual bandit algorithm that reduces the problem to online regression.
+    This implementation interfaces with the Vowpal Wabbit (via Coba) learner.
+
+    References
+    ----------
+    Foster, D. J., Agarwal, A., Dudik, M., & Schapire, R. E. (2018). 
+    "Practical Contextual Bandits with Regression Oracles." ICML.
+    """
     def __init__(self,
                  n_arms: int,
                  context_dim: int,

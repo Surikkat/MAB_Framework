@@ -1,14 +1,17 @@
-"""GPTSBandit — exact reproduction of cMAB_bandits/bandits/GPTSBandit.py.
-
-Single-GP Thompson Sampling with RFF. Includes the original broadcasting bug
-where `np.outer(phi, phi)` is calculated with the full `context` instead of `context[arm]`.
-"""
 import numpy as np
 from typing import List, Dict, Any
 from ..base import BaseAlgorithm
 
 
 class GPTSBandit(BaseAlgorithm):
+    """
+    Single-GP Thompson Sampling with Random Fourier Features (RFF).
+    
+    References
+    ----------
+    Chowdhury, S., & Gopalan, A. (2017). "On Kernelized Multi-armed Bandits." ICML.
+    Rahimi, A., & Recht, B. (2007). "Random features for large-scale kernel machines." NeurIPS.
+    """
     def __init__(self,
                  n_arms: int,
                  d: int,

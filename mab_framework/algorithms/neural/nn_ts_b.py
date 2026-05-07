@@ -1,5 +1,4 @@
-"""NN_TS_B — exact reproduction of cMAB_bandits/bandits/nn_ts_b.py.
-
+"""
 Neural Thompson Sampling with per-arm networks.
 """
 import numpy as np
@@ -12,7 +11,15 @@ from ..base import BaseAlgorithm
 
 
 class NNTSBAlgorithm(BaseAlgorithm):
-    """Exact port of cMAB_bandits/bandits/nn_ts_b.py NN_TS_B class."""
+    """
+    Neural Thompson Sampling Algorithm.
+    
+    References
+    ----------
+    Suraveikin, E., Omirzak, D., Sultimov, R., & Maximov, Y. (2026). 
+    "Efficient Contextual Bandit Learning via Reward-Space Sampling 
+    and Online Optimization." AAAI.
+    """
     def __init__(self, n_arms: int, d: int, v: float = 0.1, width: int = 10, depth: int = 2,
                  reg: float = 1, e: float = 0.01, lr: float = 0.01,
                  stop_rounds: int = 1000, max_steps: int = 100, buffer_size: int = 1000, model=None):

@@ -32,6 +32,15 @@ class _DNN(nn.Module):
         return x
 
 class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
+    """
+    Neural Bandit Algorithm with Limited Memory.
+    
+    References
+    ----------
+    Suraveikin, E., Omirzak, D., Sultimov, R., & Maximov, Y. (2026). 
+    "Efficient Contextual Bandit Learning via Reward-Space Sampling 
+    and Online Optimization." AAAI.
+    """
     def __init__(self,
                  buffer_size,
                  min_buffer_size,

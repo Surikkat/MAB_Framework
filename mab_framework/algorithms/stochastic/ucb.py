@@ -4,6 +4,14 @@ from ..base import BaseAlgorithm
 from mab_framework.models.base import BaseModel
 
 class UCBAlgorithm(BaseAlgorithm):
+    """
+    Upper Confidence Bound (UCB) / Linear UCB Algorithm.
+    
+    References
+    ----------
+    Li, L., Chu, W., Langford, J., & Schapire, R. E. (2010). 
+    "A Contextual-Bandit Approach to Personalized News Article Recommendation." WWW.
+    """
     def __init__(self, n_arms: int, model: Union[BaseModel, List[BaseModel]], alpha: float = 1.0):
         super().__init__(n_arms, model)
         self.alpha = alpha

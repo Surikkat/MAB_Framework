@@ -21,6 +21,18 @@ class SimpleMLP(nn.Module):
         return val, features
 
 class NeuralLinearModel(BaseModel):
+    """
+    Neural-Linear Model.
+
+    Uses a neural network for feature extraction and a linear ridge regression
+    on the last layer for reward prediction and uncertainty estimation.
+
+    References
+    ----------
+    Riquelme, C., Tucker, G., & Snoek, J. (2018). "Deep Bayesian Bandits 
+    Showdown: An Empirical Comparison of Bayesian Deep Networks for 
+    Thompson Sampling." ICLR.
+    """
     def __init__(self, feature_dim: int, hidden_dim: int = 32, lr: float = 0.01, device: str = "cpu"):
         self.device = torch.device(device)
         self.model = SimpleMLP(feature_dim, hidden_dim).to(self.device)

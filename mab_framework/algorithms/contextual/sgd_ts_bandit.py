@@ -5,6 +5,15 @@ from scipy.special import expit
 
 
 class SGDTSBandit(BaseAlgorithm):
+    """
+    Online Thompson Sampling via Stochastic Gradient Descent (SGD-TS).
+    
+    References
+    ----------
+    Ding, W., Qi, Y., Lattimore, T., Zou, J., & Kpotufe, S. (2021). 
+    "Provably efficient online Thompson sampling with linear payoffs 
+    via stochastic gradient descent." arXiv preprint arXiv:2109.11762.
+    """
     def __init__(self, d, K=2, model=None):
         super().__init__(K, model)
         self.original_d = d  # dimensionality of a single arm context

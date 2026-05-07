@@ -2,6 +2,13 @@ import numpy as np
 from .base import BaseModel
 
 class FGTSModel(BaseModel):
+    """
+    FGTS Model for sparse bandits.
+    
+    References
+    ----------
+    Anonymous. (2025). "Sparse Bandits". Working paper / preprint.
+    """
     def __init__(self, feature_dim: int, sigma_prior=1.0, sigma_noise=0.1, max_active=20):
         self.feature_dim = feature_dim
         self.sigma_prior = sigma_prior

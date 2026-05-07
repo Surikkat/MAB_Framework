@@ -1,7 +1,3 @@
-"""cMAB models — exact reproduction of cMAB_bandits/models/*.
-
-LinearNormalModel, GLMNormalModel, NeuralNormalModel — used by CustomTSBandit.
-"""
 import numpy as np
 import torch
 import torch.nn as nn
@@ -9,7 +5,15 @@ import torch.optim as optim
 
 
 class LinearNormalModel:
-    """Exact port of cMAB_bandits/models/linear_normal.py."""
+    """
+    Linear Normal Model for Contextual Bandits.
+
+    References
+    ----------
+    Suraveikin, E., Omirzak, D., Sultimov, R., & Maximov, Y. (2026). 
+    "Efficient Contextual Bandit Learning via Reward-Space Sampling 
+    and Online Optimization." AAAI.
+    """
     def __init__(self, input_dim, n_arms, lr=0.01, fixed_std=0.1):
         self.n_arms = n_arms
         self.lr = lr
@@ -29,7 +33,15 @@ class LinearNormalModel:
 
 
 class GLMNormalModel:
-    """Exact port of cMAB_bandits/models/glm_normal.py."""
+    """
+    Generalized Linear Model (GLM) Normal Model.
+
+    References
+    ----------
+    Suraveikin, E., Omirzak, D., Sultimov, R., & Maximov, Y. (2026). 
+    "Efficient Contextual Bandit Learning via Reward-Space Sampling 
+    and Online Optimization." AAAI.
+    """
     def __init__(self, input_dim, n_arms, lr=0.01, fixed_std=0.1):
         self.n_arms = n_arms
         self.lr = lr
@@ -48,7 +60,15 @@ class GLMNormalModel:
 
 
 class NeuralNormalModel:
-    """Exact port of cMAB_bandits/models/neural_normal.py."""
+    """
+    Neural Normal Model for Contextual Bandits.
+
+    References
+    ----------
+    Suraveikin, E., Omirzak, D., Sultimov, R., & Maximov, Y. (2026). 
+    "Efficient Contextual Bandit Learning via Reward-Space Sampling 
+    and Online Optimization." AAAI.
+    """
     def __init__(self, input_dim, n_arms, hidden_dim=64, lr=1e-3, fixed_std=0.1):
         self.n_arms = n_arms
         self.fixed_std = fixed_std

@@ -2,6 +2,14 @@ import numpy as np
 from .base import BaseModel
 
 class BootstrapEnsembleModel(BaseModel):
+    """
+    Ensemble model for Bootstrap Thompson Sampling.
+    
+    References
+    ----------
+    Osband, I., Blundell, C., Pritzel, A., & Van Roy, B. (2016). 
+    "Deep Exploration via Bootstrapped DQN." NeurIPS.
+    """
     def __init__(self, feature_dim: int, n_models: int = 10, lr: float = 0.01, fixed_std: float = 0.1, bootstrap_prob: float = 0.8):
         self.d = feature_dim
         self.n_models = n_models

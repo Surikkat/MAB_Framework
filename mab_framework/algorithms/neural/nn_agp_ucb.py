@@ -19,6 +19,11 @@ class NNAGPUCBAlgorithm(BaseAlgorithm):
 
     Expects context of shape (n_arms, feature_dim) where each row is
     the concatenation [theta_t, x_a] for arm a.
+    
+    References
+    ----------
+    Suraveikin, E. (2026). "Uncertainty Quantification and Interpretability 
+    for Contextual Bandits through Structured Latent Representations."
     """
 
     def __init__(self, n_arms: int, model: BaseModel, beta: float = 2.0):

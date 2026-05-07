@@ -1,9 +1,9 @@
-"""FGTS Algorithm.
+"""
+Feature-Generative Thompson Sampling (FGTS) Algorithm alias.
 
-FGTS is mathematically identical to Thompson Sampling: both select
-the arm with the highest sampled value from the posterior. The difference
-lies in the *model* (FGTSModel with feature gating), not the algorithm.
-This module re-exports ThompsonSampling for backward compatibility.
+References
+----------
+Anonymous. (2025). "Sparse Bandits". Working paper / preprint.
 """
 from .thompson_sampling import ThompsonSampling
 

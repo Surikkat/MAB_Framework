@@ -3,6 +3,13 @@ from sklearn.linear_model import Lasso
 from .base import BaseModel
 
 class FGTSLassoModel(BaseModel):
+    """
+    FGTS Lasso Model for sparse bandits.
+    
+    References
+    ----------
+    Anonymous. (2025). "Sparse Bandits". Working paper / preprint.
+    """
     def __init__(self, feature_dim: int, lasso_alpha=None, lasso_start=100, lasso_period=100, window=500, sigma_noise=0.1, sigma_prior=1.0):
         self.feature_dim = feature_dim
         self.lasso_alpha = lasso_alpha

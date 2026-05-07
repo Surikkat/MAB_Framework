@@ -3,6 +3,17 @@ from .base import BaseModel
 
 
 class GPRFFModel(BaseModel):
+    """
+    Gaussian Process Model with Random Fourier Features (RFF).
+
+    Approximates the RBF kernel using random features to scale Gaussian 
+    Processes to a large number of observations.
+
+    References
+    ----------
+    Rahimi, A., & Recht, B. (2007). "Random features for large-scale 
+    kernel machines." NeurIPS.
+    """
     def __init__(self, feature_dim: int, kernel_scale: float = 1.0, lengthscale: float = 1.0,
                  n_features: int = 500, lambda_prior: float = 1.0, nu0: float = 1.0):
         self.d = feature_dim

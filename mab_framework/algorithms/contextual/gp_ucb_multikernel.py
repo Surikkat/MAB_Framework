@@ -1,7 +1,3 @@
-"""GP_UCB_KernelFlexible — exact reproduction of NN_AGP/bandits/gp_ucb_multikernel.py.
-
-GP-UCB with multiplicative or adaptive kernel over (theta, x) pairs.
-"""
 import math
 import numpy as np
 from typing import List, Dict, Any
@@ -10,10 +6,8 @@ from ..base import BaseAlgorithm
 
 
 class GPUCBKernelFlexibleAlgorithm(BaseAlgorithm):
-    """Exact port of NN_AGP/bandits/gp_ucb_multikernel.py GP_UCB_KernelFlexible.
-
-    Single shared GP model over (theta, x) concatenated inputs.
-    Expects context shape (n_arms, feature_dim) where each row is [theta_t, x_a].
+    """
+    Gaussian Process UCB with multiplicative or adaptive kernel over (theta, x) pairs.
     """
     def __init__(self, n_arms: int, x_dim: int, theta_dim: int,
                  sigma_noise: float = 0.01, beta: float = 2.0,

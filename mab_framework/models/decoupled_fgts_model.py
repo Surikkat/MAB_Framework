@@ -1,14 +1,17 @@
-"""DecoupledFGTSModel — exact reproduction of FGTS_LASSO/decoupled_fgts_lasso.py.
 
-Uses LASSO for feature selection + OLS (not BLR) for parameter estimation.
-select_action uses greedy (no sampling), matching original SimpleFGTS.
-"""
 import numpy as np
 from sklearn.linear_model import Lasso
 from .base import BaseModel
 
 
 class DecoupledFGTSModel(BaseModel):
+    """
+    Decoupled FGTS Model using LASSO for feature selection and OLS.
+    
+    References
+    ----------
+    Anonymous. (2025). "Sparse Bandits". Working paper / preprint.
+    """
     def __init__(self, feature_dim: int, lasso_alpha=None, lasso_start=100, lasso_period=100, window=500):
         self.feature_dim = feature_dim
         self.lasso_alpha = lasso_alpha

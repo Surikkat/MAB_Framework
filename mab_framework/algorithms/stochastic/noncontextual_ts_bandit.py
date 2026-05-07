@@ -4,6 +4,14 @@ from ..base import BaseAlgorithm
 
 
 class NonContextualTSBandit(BaseAlgorithm):
+    """
+    Non-Contextual Thompson Sampling Algorithm.
+    
+    References
+    ----------
+    Thompson, W. R. (1933). "On the Likelihood that One Unknown Probability 
+    Exceeds Another in View of the Evidence of Two Samples." Biometrika.
+    """
     def __init__(self, n_arms, prior_mean=0.0, prior_var=1.0, reward_var=1.0, model=None):
         super().__init__(n_arms, model)
         self.mu = np.ones(n_arms) * prior_mean

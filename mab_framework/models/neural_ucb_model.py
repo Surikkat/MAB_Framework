@@ -24,8 +24,12 @@ class _MLP(nn.Module):
 
 class NeuralUCBModel(BaseModel):
     """
-    Decoupled NeuralUCB Model responsible for tracking histories and training _MLP via SGD.
-    Matches the exact training mathematics from the original NeuralUCB algorithm.
+    Neural Network Model for NeuralUCB with gradient-based features.
+
+    References
+    ----------
+    Zhou, D., Li, L., & Gu, Q. (2020). "Neural Contextual Bandits with 
+    UCB-based Exploration." ICML.
     """
     def __init__(self, feature_dim: int, m: int = 64, L: int = 2, 
                  lambd: float = 1.0, eta: float = 1e-3, J: int = 20, device: str = "cpu"):

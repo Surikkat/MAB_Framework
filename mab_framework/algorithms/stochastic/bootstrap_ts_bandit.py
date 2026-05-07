@@ -3,6 +3,17 @@ from typing import List, Dict, Any
 from ..base import BaseAlgorithm
 
 class BootstrapTSBandit(BaseAlgorithm):
+    """
+    Bootstrap Thompson Sampling Algorithm.
+    
+    Uses an ensemble of bootstrapped models to approximate the posterior 
+    distribution for exploration.
+    
+    References
+    ----------
+    Osband, I., Blundell, C., Pritzel, A., & Van Roy, B. (2016). 
+    "Deep Exploration via Bootstrapped DQN." NeurIPS.
+    """
     def __init__(self, n_arms, d, model=None):
         super().__init__(n_arms, model)
         self.d = d

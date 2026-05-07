@@ -29,7 +29,14 @@ def _rbf_kernel_matrix(X1, X2, lengthscale, variance):
 
 
 class NNAGPModel(BaseModel):
-    """NN-AGP model — returns (mu, sigma²) from predict(), matching original posterior()."""
+    """
+    NN-AGP Model returning (mu, sigma²) from predict.
+    
+    References
+    ----------
+    Suraveikin, E. (2026). "Uncertainty Quantification and Interpretability 
+    for Contextual Bandits through Structured Latent Representations."
+    """
     def __init__(
         self,
         theta_dim: int,

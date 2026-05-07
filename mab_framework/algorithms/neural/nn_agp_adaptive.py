@@ -1,5 +1,4 @@
-"""NN_AGP_UCB_Adaptive — exact reproduction of NN_AGP/bandits/nn_agp_adaptive.py.
-
+"""
 Adaptive m via SVD pruning. Single shared model for all arms.
 """
 import math
@@ -13,9 +12,13 @@ from ...models.nn_agp_model import _NeuralEmbedding, _rbf_kernel_matrix
 
 
 class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
-    """Exact port of NN_AGP/bandits/nn_agp_adaptive.py NN_AGP_UCB_Adaptive.
-
-    Uses SVD pruning to adaptively reduce m (embedding dimension).
+    """
+    NN-AGP Adaptive UCB Algorithm with SVD pruning.
+    
+    References
+    ----------
+    Suraveikin, E. (2026). "Uncertainty Quantification and Interpretability 
+    for Contextual Bandits through Structured Latent Representations."
     """
     def __init__(
         self,

@@ -2,6 +2,9 @@ import numpy as np
 from .base import BaseModel
 
 class OnlineRidgeRegression(BaseModel):
+    """
+    Online Ridge Regression model for Linear Contextual Bandits (LinUCB/LinTS).
+    """
     def __init__(self, feature_dim: int, l2_reg: float = 1.0, nu: float = 1.0):
         self.feature_dim = feature_dim
         self.nu = nu
