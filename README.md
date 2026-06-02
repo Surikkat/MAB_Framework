@@ -162,6 +162,15 @@ Includes 20+ implementations, such as:
 * GP-based methods
 * GLM-based bandits
 
+## 🕰️ Academic Delayed Feedback Algorithms
+
+BanditLab provides state-of-the-art academic implementations of Multi-Armed Bandit algorithms under delayed feedback. These methods strictly adhere to the mathematical bounds established in peer-reviewed literature and avoid ad-hoc heuristics.
+
+* **JoulaniDelayedUCB**: Implements the order-optimal delay-adapted UCB from *Joulani et al., 2013 ("Online Learning under Delayed Feedback")*. It strictly computes confidence intervals based exclusively on resolved observations, handling arbitrary delays elegantly.
+* **VernadeDelayedUCB**: From *Vernade et al., 2017 ("Stochastic Bandit Models for Delayed Conversions")*. This algorithm assumes knowledge of the delay CDF and models the expected number of arrivals. Our implementation uses amortized $O(1)$ complexity via $D_{max}$ truncation, avoiding the traditional $O(T^2)$ computational bottleneck.
+* **PatientBandits**: Derived from *Manegueu et al., 2020 ("Stochastic bandits with arm-dependent delays")*. It guarantees finite-horizon theoretical bounds specifically crafted for heavy-tailed delay distributions and relies on a dedicated tail-index parameter $\alpha$.
+* **DelayedThompsonSampling**: As established by *Chapelle & Li, 2011*, plain Thompson Sampling handles delays natively without modifying the posterior. This algorithm simply waits for resolved data to update the model and samples from the true posterior, sidestepping variance deflation pitfalls.
+
 ### Models
 
 * Linear / Ridge Regression

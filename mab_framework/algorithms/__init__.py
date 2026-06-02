@@ -17,6 +17,13 @@ from .contextual import (
     GPUCBKernelFlexibleAlgorithm,
 )
 
+from .delayed import (
+    JoulaniDelayedUCB,
+    PatientBandits,
+    VernadeDelayedUCB,
+    DelayedThompsonSampling,
+)
+
 # try:
 #     from .contextual import RegcbBanit
 # except ImportError:

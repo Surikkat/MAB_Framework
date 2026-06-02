@@ -1,0 +1,61 @@
+experiment:
+  name: "delayed_academic"
+  steps: 5000
+  n_runs: 5
+  device: "cpu"
+  seed: 42
+
+environment:
+  name: "SyntheticLinearEnv"
+  params:
+    n_arms: 10
+    context_dim: 1
+    noise_std: 0.1
+  delay:
+    type: "geometric"
+    p: 0.05
+
+algorithms:
+  - name: "UCBAlgorithm"
+    display_name: "LinUCB (Contextual Baseline)"
+    model:
+      name: "OnlineRidgeRegression"
+      one_model_per_arm: true
+      params:
+        feature_dim: 1
+        l2_reg: 1.0
+    params:
+      alpha: 1.0
+
+  - name: "JoulaniDelayedUCB"
+    display_name: "JoulaniDelayedUCB"
+    params: {}
+
+  - name: "VernadeDelayedUCB"
+    display_name: "VernadeDelayedUCB"
+    params:
+      delay_type: "geometric"
+      delay_param: 0.05
+
+  - name: "PatientBandits"
+    display_name: "PatientBandits"
+    params:
+      horizon_T: 5000
+
+  - name: "DelayedThompsonSampling"
+    display_name: "DelayedThompsonSampling"
+    model:
+      name: "OnlineRidgeRegression"
+      one_model_per_arm: true
+      params:
+        feature_dim: 1
+        l2_reg: 1.0
+    params: {}
+
+metrics:
+  - "cumulative_regret"
+  - "average_regret"
+  - "runtime"
+
+output:
+  save_path: "experiment/results_delayed_academic"
