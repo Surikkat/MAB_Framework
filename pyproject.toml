@@ -1,6 +1,6 @@
 [project]
 name = "BanditLab"
-version = "0.2.0"
+version = "0.2.1"
 description = "Framework for multi-armed bandits with support for contextual, GLM, NN, GP-based and delayed methods"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
