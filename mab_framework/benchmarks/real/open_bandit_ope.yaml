@@ -1,0 +1,47 @@
+experiment:
+  name: "open_bandit_ope"
+  n_runs: 3
+  seed: 42
+
+environment:
+  name: "OpenBanditEnvironment"
+  params:
+    behavior_policy: "random"
+    campaign: "all"
+
+ope:
+  estimator:
+    - ips
+    - snips
+  train_ratio: 0.7
+
+algorithms:
+  - name: "ThompsonSampling"
+    display_name: "Thompson Sampling"
+    params: {}
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+  - name: "UCBAlgorithm"
+    display_name: "LinUCB (alpha=1.0)"
+    params: { alpha: 1.0 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+  - name: "EpsilonGreedy"
+    display_name: "Eps-Greedy (eps=0.1)"
+    params: { epsilon: 0.1 }
+    model:
+      name: "OnlineRidgeRegression"
+      params: { l2_reg: 1.0 }
+      one_model_per_arm: true
+
+metrics:
+  - policy_value
+
+output:
+  save_path: "./results/open_bandit_ope"

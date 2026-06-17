@@ -81,6 +81,22 @@ def print_leaderboard(all_results):
     print("\n" + df.to_string(index=False) + "\n")
 
 
+def print_ope_leaderboard(all_ope_results):
+    rows = []
+    for algo_name, estimator_results in all_ope_results.items():
+        row = {"Algorithm": algo_name}
+        for est_name, stats in estimator_results.items():
+            row[f"Policy Value ({est_name})"] = round(stats["mean"], 6)
+            if stats["std"] > 0:
+                row[f"Std ({est_name})"] = round(stats["std"], 6)
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    value_cols = [c for c in df.columns if c.startswith("Policy Value")]
+    if value_cols:
+        df = df.sort_values(value_cols[0], ascending=False)
+    print("\n" + df.to_string(index=False) + "\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description="BanditLab CLI Runner")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -140,6 +156,55 @@ def main():
     env_max_steps = getattr(env, 'T', steps)
     if steps > env_max_steps:
         steps = env_max_steps
+
+    ope_config = config.get('ope')
+    if ope_config:
+        from mab_framework.experiment.ope_runner import OPERunner
+
+        output_config = config.get('output', {})
+        save_path = Path(output_config.get('save_path', f"./results/{exp_name}"))
+        save_path.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(config_path, save_path / "config.yaml")
+
+        algo_configs = config.get('algorithms', [])
+        if not algo_configs:
+            raise ValueError("No algorithms specified in the config")
+
+        estimator = ope_config.get('estimator', 'ips')
+        if isinstance(estimator, str):
+            estimator = [estimator]
+        train_ratio = ope_config.get('train_ratio', 0.7)
+
+        all_ope_results = {}
+        for algo_conf in algo_configs:
+            a_name = algo_conf.get('display_name', algo_conf['name'])
+            algo_dir = save_path / a_name.replace(' ', '_')
+
+            metadata = {
+                "algorithm": algo_conf['name'],
+                "display_name": a_name,
+                "estimators": estimator,
+            }
+
+            algo_factory = make_algo_factory(algo_conf, n_arms, feature_dim=feature_dim)
+
+            runner = OPERunner(
+                env=env,
+                algorithm_factory=algo_factory,
+                estimator_names=estimator,
+                train_ratio=train_ratio,
+                n_runs=n_runs,
+                seed=seed,
+                save_dir=str(algo_dir),
+                metadata=metadata,
+            )
+            try:
+                all_ope_results[a_name] = runner.run()
+            except (Exception, SystemExit) as e:
+                print(f"[SKIP] {a_name}: {e}")
+
+        print_ope_leaderboard(all_ope_results)
+        return
 
     output_config = config.get('output', {})
     save_path = Path(output_config.get('save_path', f"./results/{exp_name}"))
