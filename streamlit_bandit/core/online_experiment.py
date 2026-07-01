@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Any, Callable
 import yaml
 
-MAB_PATH = Path("/home/surikkat/code/MAB_Framework")
+MAB_PATH = Path(__file__).resolve().parents[2]
 if str(MAB_PATH) not in sys.path:
     sys.path.insert(0, str(MAB_PATH))
 

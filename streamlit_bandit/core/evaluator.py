@@ -6,7 +6,7 @@ from sklearn.metrics import roc_auc_score
 
 class OPEEvaluator:
     def __init__(self, df_log, clipping_value=10, min_propensity=0.01, methods=['dm', 'ips', 'dr']):
-        self.df = df_log
+        self.df = df_log.copy()
         self.clipping_value = clipping_value
         self.min_propensity = min_propensity
         self.methods = methods
