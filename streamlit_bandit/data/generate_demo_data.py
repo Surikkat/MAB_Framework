@@ -38,7 +38,9 @@ def generate_finance_logs(n_samples=50000):
         'user_age': user_age,
         'user_credit_history': user_credit_history,
         'item_id': actions,
+        'action': actions,
         'propensity': np.clip(propensity + np.random.normal(0, 0.01, n_samples), 0.01, 0.99),
+        'pscore': np.clip(propensity + np.random.normal(0, 0.01, n_samples), 0.01, 0.99),
         'reward': reward,
         'loan_amount': user_income * np.random.uniform(3, 6, n_samples)
     })
@@ -83,12 +85,26 @@ def generate_ads_logs(n_samples=75000):
         'hour_of_day': hour,
         'device_type': device,
         'item_id': actions,
+        'action': actions,
         'propensity': np.clip(propensity + np.random.normal(0, 0.01, n_samples), 0.01, 0.99),
+        'pscore': np.clip(propensity + np.random.normal(0, 0.01, n_samples), 0.01, 0.99),
         'reward': reward,
         'banner_position': np.random.randint(0, 5, n_samples)
     })
     
     return df
 
+
+if __name__ == "__main__":
+    data_dir = Path(__file__).parent
+    df_fin = generate_finance_logs()
+    fin_path = data_dir / "finance_demo.parquet"
+    df_fin.to_parquet(fin_path, index=False)
+    print(f"✅ Сохранено: {fin_path} ({len(df_fin):,} строк)")
+
+    df_ads = generate_ads_logs()
+    ads_path = data_dir / "ads_demo.parquet"
+    df_ads.to_parquet(ads_path, index=False)
+    print(f"✅ Сохранено: {ads_path} ({len(df_ads):,} строк)")
 
 print("✅ Демо-данные готовы!")

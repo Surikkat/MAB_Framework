@@ -29,6 +29,11 @@ class LogDataEnvironment(BaseEnvironment):
 
         df = reader(path)
 
+        if action_column not in df.columns and "item_id" in df.columns:
+            action_column = "item_id"
+        if pscore_column not in df.columns and "propensity" in df.columns:
+            pscore_column = "propensity"
+
         self.logged_actions = df[action_column].values
         self.rewards = df[reward_column].values.astype(float)
         self.pscore = df[pscore_column].values.astype(float)
