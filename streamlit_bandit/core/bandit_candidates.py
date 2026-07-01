@@ -28,8 +28,10 @@ from mab_framework.algorithms.neural.neural_ucb import NeuralUCBAlgorithm
 from mab_framework.algorithms.neural.nn_ucb import NNUCBAlgorithm
 from mab_framework.algorithms.neural.nn_ts_b import NNTSBAlgorithm
 from mab_framework.algorithms.neural.nn_bandit_limited_memory import NeuralBanditWithLimitedMemory_5
+from mab_framework.algorithms.neural.pfn_ts import PFNTSAlgorithm
 
 # ВСЕ МОДЕЛИ
+from mab_framework.models.tabicl_model import TabICLRegressorPPD
 from mab_framework.models.linear_model import OnlineRidgeRegression
 from mab_framework.models.gp_rff_model import GPRFFModel
 from mab_framework.models.nn_agp_model import NNAGPModel
@@ -72,25 +74,33 @@ class BanditCandidateWrapper:
         sort_col = 'hour_of_day' if 'hour_of_day' in df_work.columns else df_work.columns[0]
         df_sorted = df_work.sort_values(sort_col).reset_index(drop=True)
 
-        models = []
-        for _ in range(n_arms):
-            model_kwargs = self.model_kwargs.copy()
-            model_kwargs['feature_dim'] = context_dim
-            models.append(self.model_class(**model_kwargs))
+        if self.algorithm_class.__name__ == 'PFNTSAlgorithm':
+            model_inst = self.model_class(**self.model_kwargs)
+            algo_kwargs = self.algorithm_kwargs.copy()
+            algo_kwargs['n_arms'] = n_arms
+            algo_kwargs['model'] = model_inst
+            algo_kwargs['n_features'] = context_dim
+            algorithm = self.algorithm_class(**algo_kwargs)
+        else:
+            models = []
+            for _ in range(n_arms):
+                model_kwargs = self.model_kwargs.copy()
+                model_kwargs['feature_dim'] = context_dim
+                models.append(self.model_class(**model_kwargs))
 
-        algo_kwargs = self.algorithm_kwargs.copy()
-        algo_kwargs['n_arms'] = n_arms
-        algo_kwargs['model'] = models
-        
-        init_params = self.algorithm_class.__init__.__code__.co_varnames
-        if 'x_dim' in init_params:
-            algo_kwargs.setdefault('x_dim', context_dim)
-        if 'theta_dim' in init_params:
-            algo_kwargs.setdefault('theta_dim', context_dim)
-        if 'd' in init_params:
-            algo_kwargs.setdefault('d', context_dim)
-        
-        algorithm = self.algorithm_class(**algo_kwargs)
+            algo_kwargs = self.algorithm_kwargs.copy()
+            algo_kwargs['n_arms'] = n_arms
+            algo_kwargs['model'] = models
+            
+            init_params = self.algorithm_class.__init__.__code__.co_varnames
+            if 'x_dim' in init_params:
+                algo_kwargs.setdefault('x_dim', context_dim)
+            if 'theta_dim' in init_params:
+                algo_kwargs.setdefault('theta_dim', context_dim)
+            if 'd' in init_params:
+                algo_kwargs.setdefault('d', context_dim)
+            
+            algorithm = self.algorithm_class(**algo_kwargs)
 
         n_play = min(5000, len(df_sorted))
         step = max(1, len(df_sorted) // n_play)
@@ -154,7 +164,14 @@ class BanditCandidateWrapper:
             df['device_code'] = df['device_type'].map({'mobile': 0.0, 'desktop': 1.0, 'tablet': 2.0}).fillna(0.0)
             user_cols.append('device_code')
         
-        return user_cols if user_cols else ['hour_of_day']
+        if not user_cols:
+            num_cols = [c for c in df.select_dtypes(include=[np.number]).columns if c not in ('item_id', 'propensity', 'reward')]
+            if num_cols:
+                user_cols.append(num_cols[0])
+            else:
+                df['dummy_feature'] = 1.0
+                user_cols.append('dummy_feature')
+        return user_cols
 
 
 class BanditCandidatePool:
@@ -349,6 +366,18 @@ class BanditCandidatePool:
                 'category': '🧠 Neural (Slow)',
                 'complexity': '⭐⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NeuralBanditWithLimitedMemory_5, {}, NeuralLinearModel, {'feature_dim': dim})
+            },
+            {
+                'name': 'PFN-TS (Adaptive TabICL)',
+                'description': 'Thompson Sampling через Universal Subsampling CLT (PFN TabICL)',
+                'category': '🧠 Neural (Slow)',
+                'complexity': '⭐⭐⭐⭐⭐',
+                'wrapper': BanditCandidateWrapper(
+                    PFNTSAlgorithm,
+                    {'encoding': 'adaptive', 'alpha': 1.0},
+                    TabICLRegressorPPD,
+                    {}
+                )
             },
             
             # SPECIAL — 5 алгоритмов

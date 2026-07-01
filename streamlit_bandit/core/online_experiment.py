@@ -172,6 +172,14 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '🧠 Neural',
         },
+        {
+            'name': 'PFN-TS (Adaptive TabICL)',
+            'algo_name': 'PFNTSAlgorithm',
+            'params': {'encoding': 'adaptive', 'alpha': 1.0},
+            'model_name': 'TabICLRegressorPPD',
+            'model_params': {},
+            'category': '🧠 Neural',
+        },
     ]
     return pd.DataFrame(algos)
 
@@ -179,23 +187,30 @@ def get_available_algorithms_for_online():
 def make_algo_factory(algo_row, n_arms, feature_dim):
     """Создаёт фабрику алгоритмов для ExperimentRunner"""
     def factory():
+        AlgoClass = getattr(algorithms, algo_row['algo_name'])
+        init_params = AlgoClass.__init__.__code__.co_varnames
+
         model = None
         if algo_row['model_name']:
             ModelClass = getattr(models, algo_row['model_name'])
             m_params = dict(algo_row['model_params'])
             m_params['feature_dim'] = feature_dim
-            model = [ModelClass(**m_params) for _ in range(n_arms)]
+            if algo_row['algo_name'] == 'PFNTSAlgorithm':
+                model = ModelClass(**m_params)
+            else:
+                model = [ModelClass(**m_params) for _ in range(n_arms)]
         
-        AlgoClass = getattr(algorithms, algo_row['algo_name'])
         a_params = dict(algo_row['params'])
         a_params['n_arms'] = n_arms
         
-        if 'x_dim' in a_params:
+        if 'x_dim' in init_params:
             a_params['x_dim'] = feature_dim
-        if 'theta_dim' in a_params:
+        if 'theta_dim' in init_params:
             a_params['theta_dim'] = feature_dim
-        if 'd' in a_params:
+        if 'd' in init_params:
             a_params['d'] = feature_dim
+        if 'n_features' in init_params:
+            a_params['n_features'] = feature_dim
             
         if model is not None:
             a_params['model'] = model
