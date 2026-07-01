@@ -75,7 +75,14 @@ class BanditCandidateWrapper:
         df_sorted = df_work.sort_values(sort_col).reset_index(drop=True)
 
         if self.algorithm_class.__name__ == 'PFNTSAlgorithm':
-            model_inst = self.model_class(**self.model_kwargs)
+            model_kwargs = self.model_kwargs.copy()
+            m_init_params = self.model_class.__init__.__code__.co_varnames
+            if 'feature_dim' in m_init_params:
+                model_kwargs['feature_dim'] = context_dim
+            elif 'd' in m_init_params:
+                model_kwargs['d'] = context_dim
+
+            model_inst = self.model_class(**model_kwargs)
             algo_kwargs = self.algorithm_kwargs.copy()
             algo_kwargs['n_arms'] = n_arms
             algo_kwargs['model'] = model_inst
@@ -85,7 +92,11 @@ class BanditCandidateWrapper:
             models = []
             for _ in range(n_arms):
                 model_kwargs = self.model_kwargs.copy()
-                model_kwargs['feature_dim'] = context_dim
+                m_init_params = self.model_class.__init__.__code__.co_varnames
+                if 'feature_dim' in m_init_params:
+                    model_kwargs['feature_dim'] = context_dim
+                elif 'd' in m_init_params:
+                    model_kwargs['d'] = context_dim
                 models.append(self.model_class(**model_kwargs))
 
             algo_kwargs = self.algorithm_kwargs.copy()
@@ -99,6 +110,10 @@ class BanditCandidateWrapper:
                 algo_kwargs.setdefault('theta_dim', context_dim)
             if 'd' in init_params:
                 algo_kwargs.setdefault('d', context_dim)
+            if 'context_dim' in init_params:
+                algo_kwargs.setdefault('context_dim', context_dim)
+            if 'n_features' in init_params:
+                algo_kwargs.setdefault('n_features', context_dim)
             
             algorithm = self.algorithm_class(**algo_kwargs)
 

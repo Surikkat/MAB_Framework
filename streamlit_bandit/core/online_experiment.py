@@ -194,7 +194,12 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
         if algo_row['model_name']:
             ModelClass = getattr(models, algo_row['model_name'])
             m_params = dict(algo_row['model_params'])
-            m_params['feature_dim'] = feature_dim
+            m_init_params = ModelClass.__init__.__code__.co_varnames
+            if 'feature_dim' in m_init_params:
+                m_params['feature_dim'] = feature_dim
+            elif 'd' in m_init_params:
+                m_params['d'] = feature_dim
+                
             if algo_row['algo_name'] == 'PFNTSAlgorithm':
                 model = ModelClass(**m_params)
             else:
@@ -211,6 +216,8 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
             a_params['d'] = feature_dim
         if 'n_features' in init_params:
             a_params['n_features'] = feature_dim
+        if 'context_dim' in init_params:
+            a_params['context_dim'] = feature_dim
             
         if model is not None:
             a_params['model'] = model

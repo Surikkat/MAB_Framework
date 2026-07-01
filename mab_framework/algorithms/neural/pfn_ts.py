@@ -397,7 +397,7 @@ class PFNTSAlgorithm(BaseAlgorithm):
 
     def update(self, feedbacks: List[Dict[str, Any]]) -> None:
         for feedback in feedbacks:
-            arm = feedback["arm"]
+            arm = feedback.get("arm", feedback.get("action"))
             context = np.asarray(feedback["context"], dtype=float).reshape(-1)
             reward = float(feedback["reward"])
 
