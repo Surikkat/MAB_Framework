@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "streamlit-bandits"
+version = "0.1.0"
+description = ""
+authors = ["e.suraveykin <surikkatik@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+cvxpy = "^1.9.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
