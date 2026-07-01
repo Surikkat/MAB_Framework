@@ -135,18 +135,6 @@ class JSONDatasetEnv(BaseDatasetEnvironment):
         self.thetas = None
         self.X_pool = None
 
-def DatasetEnvironment(dataset_path: str, max_steps: int = None, **kwargs):
-    if os.path.isdir(dataset_path):
-        return FolderDatasetEnv(dataset_path, max_steps, **kwargs)
-    elif dataset_path.endswith('.npz'):
-        return NPZDatasetEnv(dataset_path, max_steps, **kwargs)
-    elif dataset_path.endswith('.csv'):
-        return CSVDatasetEnv(dataset_path, max_steps, **kwargs)
-    elif dataset_path.endswith('.json'):
-        return JSONDatasetEnv(dataset_path, max_steps, **kwargs)
-    else:
-        raise ValueError(f"Unknown dataset format for path: {dataset_path}")
-
 class FolderDatasetEnv(BaseDatasetEnvironment):
     def _load_dataset(self):
         x_path = os.path.join(self.dataset_path, "X.csv")
@@ -159,3 +147,31 @@ class FolderDatasetEnv(BaseDatasetEnvironment):
         self.context_mode = 'flat'
         self.thetas = None
         self.X_pool = None
+
+
+class DatasetEnvironmentFactory:
+    _registry = {
+        '.npz': NPZDatasetEnv,
+        '.csv': CSVDatasetEnv,
+        '.json': JSONDatasetEnv,
+    }
+
+    @classmethod
+    def register(cls, extension, env_class):
+        cls._registry[extension.lower()] = env_class
+
+    @classmethod
+    def create(cls, dataset_path, max_steps=None, **kwargs):
+        if os.path.isdir(dataset_path):
+            return FolderDatasetEnv(dataset_path, max_steps, **kwargs)
+        ext = os.path.splitext(dataset_path)[-1].lower()
+        env_class = cls._registry.get(ext)
+        if env_class is None:
+            raise ValueError(
+                f"Unknown dataset format '{ext}'. "
+                f"Supported: {list(cls._registry.keys())} and directories"
+            )
+        return env_class(dataset_path, max_steps, **kwargs)
+
+
+DatasetEnvironment = DatasetEnvironmentFactory.create

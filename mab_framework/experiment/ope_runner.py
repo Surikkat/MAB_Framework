@@ -44,19 +44,17 @@ class OPERunner:
         contexts = train_data["contexts"]
         actions = train_data["actions"]
         rewards = train_data["rewards"]
-
         n_arms = self.env.n_arms
+
         for i in range(len(contexts)):
             ctx = np.tile(contexts[i], (n_arms, 1))
             selected = algorithm.select_arm(ctx)
-            logged_action = int(actions[i])
-            if selected == logged_action:
-                feedback = [{
-                    "action": logged_action,
+            if selected == int(actions[i]):
+                algorithm.update([{
+                    "action": int(actions[i]),
                     "reward": float(rewards[i]),
                     "context": ctx,
-                }]
-                algorithm.update(feedback)
+                }])
 
     def _predict_action_dist(self, algorithm, test_contexts):
         n_rounds = len(test_contexts)
@@ -70,9 +68,23 @@ class OPERunner:
 
         return action_dist
 
+    def _build_reward_estimates(self, train_data, test_feedback):
+        from mab_framework.experiment.reward_predictor import RewardPredictor
+        predictor = RewardPredictor()
+        predictor.fit(
+            train_data["contexts"],
+            train_data["actions"],
+            train_data["rewards"],
+        )
+        return predictor.predict(test_feedback["context"], self.env.n_arms)
+
     def run(self):
         train_data, test_feedback = self._split_feedback()
         evaluator = OPEEvaluator(self.estimator_names)
+
+        estimated_rewards = None
+        if evaluator.needs_reward_model:
+            estimated_rewards = self._build_reward_estimates(train_data, test_feedback)
 
         all_runs = []
         for run_idx in range(self.n_runs):
@@ -86,7 +98,10 @@ class OPERunner:
             train_time = time.time() - start
 
             action_dist = self._predict_action_dist(algorithm, test_feedback["context"])
-            policy_values = evaluator.evaluate(test_feedback, action_dist)
+            policy_values = evaluator.evaluate(
+                test_feedback, action_dist,
+                estimated_rewards_by_reg_model=estimated_rewards,
+            )
 
             run_result = {
                 "run_id": run_idx,
@@ -112,10 +127,7 @@ class OPERunner:
 
     def _save_run(self, run_result):
         os.makedirs(self.save_dir, exist_ok=True)
-        run_data = {
-            **self.metadata,
-            **run_result,
-        }
+        run_data = {**self.metadata, **run_result}
         path = os.path.join(self.save_dir, f"ope_run_{run_result['run_id']}.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(run_data, f, indent=2)

@@ -6,3 +6,6 @@ results/
 *.egg-info/
 dist/
 build/
+личное/
+PFN_TS-36ED/
+streamlit_bandit/.git/

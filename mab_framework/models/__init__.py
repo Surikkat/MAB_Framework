@@ -18,3 +18,4 @@ from .decoupled_fgts_model import DecoupledFGTSModel
 from .cmab_models import LinearNormalModel, GLMNormalModel, NeuralNormalModel
 from .sgd_model import SGDModel
 from .bootstrap_model import BootstrapEnsembleModel
+from .tabicl_model import TabICLRegressorPPD

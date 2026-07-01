@@ -109,10 +109,18 @@ def main():
     bench_parser = subparsers.add_parser("benchmark", help="Run a built-in benchmark")
     bench_parser.add_argument("name", type=str, help="Name of the benchmark (e.g., linear_small)")
 
+    # evaluate command
+    eval_parser = subparsers.add_parser("evaluate", help="Evaluate algorithms against production via OPE")
+    eval_parser.add_argument("--config", type=str, required=True, help="Path to the YAML config file")
+
     args = parser.parse_args()
 
-    if args.command == "run":
-        config_path = args.config
+    if args.command in ("run", "evaluate"):
+        if hasattr(args, "config"):
+            config_path = args.config
+        else:
+            print("Error: --config argument required")
+            sys.exit(1)
     elif args.command == "benchmark":
         bench_dir = Path(__file__).parent / "benchmarks"
         matches = list(bench_dir.rglob(f"{args.name}.yaml"))
@@ -157,6 +165,51 @@ def main():
     if steps > env_max_steps:
         steps = env_max_steps
 
+    if args.command == "evaluate":
+        from mab_framework.experiment.ope_pipeline import OPEPipeline
+        
+        ope_config = config.get('ope', {})
+        output_config = config.get('output', {})
+        save_path = Path(output_config.get('save_path', f"./results/{exp_name}"))
+        save_path.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(config_path, save_path / "config.yaml")
+
+        algo_configs = config.get('algorithms', [])
+        if not algo_configs:
+            raise ValueError("No algorithms specified in the config")
+
+        estimators = ope_config.get('estimators', ['ips', 'snips'])
+        if 'estimator' in ope_config and 'estimators' not in ope_config:
+            estimators = ope_config['estimator']
+            if isinstance(estimators, str):
+                estimators = [estimators]
+                
+        train_ratio = ope_config.get('train_ratio', 0.7)
+
+        from tqdm import tqdm
+        all_verdicts = []
+        for algo_conf in tqdm(algo_configs, desc="Evaluating"):
+            a_name = algo_conf.get('display_name', algo_conf['name'])
+            algo_factory = make_algo_factory(algo_conf, n_arms, feature_dim=feature_dim)
+
+            pipeline = OPEPipeline(
+                env=env,
+                algorithm_factory=algo_factory,
+                candidate_name=a_name,
+                estimator_names=estimators,
+                train_ratio=train_ratio,
+                n_runs=n_runs,
+                seed=seed,
+                save_dir=str(save_path),
+            )
+            try:
+                verdict = pipeline.run()
+                all_verdicts.append(verdict)
+                print(f"\nVerdict for {a_name}:\n" + json.dumps(verdict, indent=2))
+            except (Exception, SystemExit) as e:
+                print(f"[SKIP] {a_name}: {e}")
+        return
+
     ope_config = config.get('ope')
     if ope_config:
         from mab_framework.experiment.ope_runner import OPERunner
@@ -175,8 +228,9 @@ def main():
             estimator = [estimator]
         train_ratio = ope_config.get('train_ratio', 0.7)
 
+        from tqdm import tqdm
         all_ope_results = {}
-        for algo_conf in algo_configs:
+        for algo_conf in tqdm(algo_configs, desc="Running OPE"):
             a_name = algo_conf.get('display_name', algo_conf['name'])
             algo_dir = save_path / a_name.replace(' ', '_')
 
@@ -224,7 +278,8 @@ def main():
     all_results = {}
     metrics_to_plot = config.get('metrics', ["cumulative_regret", "average_regret"])
 
-    for algo_conf in algo_configs:
+    from tqdm import tqdm
+    for algo_conf in tqdm(algo_configs, desc="Simulating"):
         a_name = algo_conf.get('display_name', algo_conf['name'])
         algo_dir = save_path / a_name.replace(' ', '_')
 
