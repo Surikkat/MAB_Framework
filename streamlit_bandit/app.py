@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import plotly.graph_objects as go
+from pathlib import Path
 
 from core.evaluator import OPEEvaluator
 from core.candidates import CandidatePool
@@ -69,14 +70,15 @@ if mode == "📊 Offline (OPE)":
     
     if uploaded_file is not None or use_demo:
         if use_demo:
+            data_dir = Path(__file__).parent / 'data'
             if "E-commerce" in demo_dataset:
-                df_log = pd.read_parquet('data/demo_ecommerce.parquet')
+                df_log = pd.read_parquet(data_dir / 'test_ecommerce.parquet')
                 domain = "ecommerce"
             elif "Финансы" in demo_dataset:
-                df_log = pd.read_parquet('data/demo_finance.parquet')
+                df_log = pd.read_parquet(data_dir / 'finance_demo.parquet')
                 domain = "finance"
             else:
-                df_log = pd.read_parquet('data/demo_ads.parquet')
+                df_log = pd.read_parquet(data_dir / 'ads_demo.parquet')
                 domain = "ads"
         else:
             if uploaded_file.name.endswith('.csv'):
