@@ -4,6 +4,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 
+from mab_framework.experiment.ope_evaluator import OPEEvaluator as FrameworkOPEEvaluator
+
 class OPEEvaluator:
     def __init__(self, df_log, clipping_value=10, min_propensity=0.01, methods=['dm', 'ips', 'dr']):
         self.df = df_log.copy()
@@ -49,32 +51,32 @@ class OPEEvaluator:
         result = {'candidate': candidate_name}
 
         pi_e = candidate_fn(self.df)
+        pscore = np.clip(self.df['propensity'].values, self.min_propensity, 1.0)
 
-        pi_b = np.clip(self.df['propensity'].values, self.min_propensity, 1.0)
-
-        weights = np.where(pi_b > 0, pi_e / pi_b, 0)
-        weights_clipped = np.clip(weights, 0, self.clipping_value)
+        feedback = {
+            "action": np.zeros(len(self.df), dtype=int),
+            "reward": self.df['reward'].values,
+            "pscore": pscore,
+        }
         
-        # 1. Direct Method
+        eval_methods = [m.lower() for m in self.methods if m.lower() in {"dm", "ips", "dr", "snips"}]
+        if not eval_methods:
+            eval_methods = ["ips", "dm", "dr"]
+
+        fw_evaluator = FrameworkOPEEvaluator(eval_methods, clipping_value=self.clipping_value, use_obp=False)
+        res = fw_evaluator.evaluate(feedback, action_dist=pi_e, estimated_rewards_by_reg_model=self.predicted_rewards)
+
         if 'dm' in self.methods:
-            result['dm_score'] = np.mean(pi_e * self.predicted_rewards)
-        
-        # 2. IPS
+            result['dm_score'] = res.get('dm', 0.0)
         if 'ips' in self.methods:
-            result['ips_score'] = np.mean(weights_clipped * self.df['reward'].values)
-        
-        # 3. Doubly Robust
+            result['ips_score'] = res.get('ips', 0.0)
         if 'dr' in self.methods:
-            residuals = self.df['reward'].values - self.predicted_rewards
-            dr_correction = np.mean(weights_clipped * residuals)
-            result['dr_score'] = result.get('dm_score', 0) + dr_correction
+            result['dr_score'] = res.get('dr', result.get('dm_score', result.get('ips_score', 0.0)))
+        if 'snips' in res:
+            result['snips_score'] = res.get('snips', 0.0)
 
-        if 'dr_score' not in result:
-            result['dr_score'] = result.get('dm_score', result.get('ips_score', 0))
-
-        result['effective_sample_size'] = weights.sum()**2 / (weights**2).sum() if weights.sum() > 0 else 0
-
-        result['max_weight'] = weights.max()
-        result['mean_weight'] = weights.mean()
+        result['effective_sample_size'] = res.get('ess', 0.0)
+        result['max_weight'] = res.get('max_weight', 0.0)
+        result['mean_weight'] = res.get('mean_weight', 0.0)
         
         return result
