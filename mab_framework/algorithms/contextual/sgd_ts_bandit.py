@@ -14,7 +14,8 @@ class SGDTSBandit(BaseAlgorithm):
     "Provably efficient online Thompson sampling with linear payoffs 
     via stochastic gradient descent." arXiv preprint arXiv:2109.11762.
     """
-    def __init__(self, d, K=2, model=None):
+    def __init__(self, d=10, K=2, model=None, n_arms=None, **kwargs):
+        K = n_arms or K or 2
         super().__init__(K, model)
         self.original_d = d  # dimensionality of a single arm context
         self.d = K * d  # Total input dimension after expansion

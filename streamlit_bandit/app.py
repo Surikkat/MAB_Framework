@@ -1,9 +1,14 @@
+import sys
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
 import plotly.graph_objects as go
 from pathlib import Path
+
+_root_dir = str(Path(__file__).resolve().parent.parent)
+if _root_dir not in sys.path:
+    sys.path.insert(0, _root_dir)
 
 from core.evaluator import OPEEvaluator
 from core.candidates import CandidatePool

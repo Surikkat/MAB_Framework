@@ -1,8 +1,14 @@
+import sys
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
+
+_root_dir = str(Path(__file__).resolve().parent.parent.parent)
+if _root_dir not in sys.path:
+    sys.path.insert(0, _root_dir)
 
 from mab_framework.experiment.ope_evaluator import OPEEvaluator as FrameworkOPEEvaluator
 

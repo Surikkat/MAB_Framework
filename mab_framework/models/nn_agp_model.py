@@ -39,8 +39,8 @@ class NNAGPModel(BaseModel):
     """
     def __init__(
         self,
-        theta_dim: int,
-        x_dim: int,
+        theta_dim: int = None,
+        x_dim: int = None,
         m: int = 5,
         hidden_dim: int = 64,
         init_lengthscale: float = 1.0,
@@ -48,9 +48,13 @@ class NNAGPModel(BaseModel):
         init_noise: float = 0.05,
         lr: float = 1e-3,
         mll_steps: int = 60,
+        feature_dim: int = None,
         jitter: float = 1e-6,
-        device: str = "cpu"
+        device: str = "cpu",
+        **kwargs,
     ):
+        theta_dim = theta_dim or feature_dim or 1
+        x_dim = x_dim or feature_dim or 1
         self.device = torch.device(device)
         self.theta_dim = theta_dim
         self.x_dim = x_dim

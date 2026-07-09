@@ -12,10 +12,8 @@ from .nn_ucb_model import NNUCBModel
 # Added from Batch 2
 from .kernel_ucb_model import KernelUCBModel
 from .exact_gp_model import ExactGPModel
-from .decoupled_fgts_model import DecoupledFGTSModel
 
 # Added from Batch 4
 from .cmab_models import LinearNormalModel, GLMNormalModel, NeuralNormalModel
 from .sgd_model import SGDModel
-from .bootstrap_model import BootstrapEnsembleModel
 from .tabicl_model import TabICLRegressorPPD

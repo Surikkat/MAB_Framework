@@ -42,17 +42,17 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
     and Online Optimization." AAAI.
     """
     def __init__(self,
-                 buffer_size,
-                 min_buffer_size,
-                 n_arms,
-                 g,
-                 L,
-                 input_dim,
+                 buffer_size: int = 1000,
+                 min_buffer_size: int = 10,
+                 n_arms: int = 2,
+                 g: int = 10,
+                 L: int = 2,
+                 input_dim: int = 10,
                  epsilon=1e-6,
                  lambda_prior=0.1,
                  a_0=6.0, b_0=6.0,
                  P=400,
-                 batch_size=1, lr=1e-3, model=None):
+                 batch_size=1, lr=1e-3, model=None, **kwargs):
         """
         buffer_size - size of the buffer that stores the results of the last n iterations
         n_arms - number of actions

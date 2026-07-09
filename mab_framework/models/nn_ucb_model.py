@@ -30,7 +30,7 @@ class NNUCBModel(BaseModel):
     """
     def __init__(self, feature_dim: int, hidden_width: int = 256,
                  hidden_layers: int = 2, J: int = 10, lr: float = 1e-3, 
-                 buffer_size: int = None, device: str = "cpu"):
+                 buffer_size: int = None, device: str = "cpu", **kwargs):
         self.device = device
         self.context_dim = feature_dim
         

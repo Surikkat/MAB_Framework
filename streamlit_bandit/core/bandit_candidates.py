@@ -1,8 +1,14 @@
 import sys
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from typing import Callable
 from collections import Counter
+
+
+_root_dir = str(Path(__file__).resolve().parent.parent.parent)
+if _root_dir not in sys.path:
+    sys.path.insert(0, _root_dir)
 
 
 # Stochastic
@@ -37,8 +43,9 @@ from mab_framework.models.gp_rff_model import GPRFFModel
 from mab_framework.models.nn_agp_model import NNAGPModel
 from mab_framework.models.neural_network import NeuralLinearModel
 from mab_framework.models.neural_ucb_model import NeuralUCBModel
+from mab_framework.models.nn_ucb_model import NNUCBModel
 from mab_framework.models.glm_laplace_model import GLMLaplaceModel
-from mab_framework.models.bootstrap_model import BootstrapEnsembleModel
+from mab_framework.algorithms.stochastic.bootstrap_ts_bandit import BootstrapEnsembleModel
 from mab_framework.models.cmab_models import LinearNormalModel, GLMNormalModel, NeuralNormalModel
 from mab_framework.models.exact_gp_model import ExactGPModel
 from mab_framework.models.fgts_model import FGTSModel
@@ -366,7 +373,7 @@ class BanditCandidatePool:
                 'description': 'Deep Neural UCB',
                 'category': '🧠 Neural (Slow)',
                 'complexity': '⭐⭐⭐⭐',
-                'wrapper': BanditCandidateWrapper(NNUCBAlgorithm, {'beta': 2.0}, NeuralLinearModel, {'feature_dim': dim})
+                'wrapper': BanditCandidateWrapper(NNUCBAlgorithm, {'beta': 2.0}, NNUCBModel, {'feature_dim': dim})
             },
             {
                 'name': 'NN-TS-B',

@@ -14,11 +14,12 @@ class LinearNormalModel:
     "Efficient Contextual Bandit Learning via Reward-Space Sampling 
     and Online Optimization." AAAI.
     """
-    def __init__(self, input_dim, n_arms, lr=0.01, fixed_std=0.1):
+    def __init__(self, input_dim=None, n_arms=2, lr=0.01, fixed_std=0.1, dtype=np.float64, feature_dim=None, **kwargs):
+        input_dim = input_dim or feature_dim or 10
         self.n_arms = n_arms
         self.lr = lr
         self.fixed_std = fixed_std
-        self.weights = np.zeros((n_arms, input_dim), dtype=np.float32)
+        self.weights = np.zeros((n_arms, input_dim), dtype=dtype)
 
     def predict(self, context):
         means = np.einsum('ij,ij->i', self.weights, context)
@@ -32,31 +33,11 @@ class LinearNormalModel:
         self.weights[action] -= self.lr * grad
 
 
-class GLMNormalModel:
+class GLMNormalModel(LinearNormalModel):
     """
-    Generalized Linear Model (GLM) Normal Model.
-
-    References
-    ----------
-    Suraveikin, E., Omirzak, D., Sultimov, R., & Maximov, Y. (2026). 
-    "Efficient Contextual Bandit Learning via Reward-Space Sampling 
-    and Online Optimization." AAAI.
+    Generalized Linear Model (GLM) Normal Model alias for LinearNormalModel.
     """
-    def __init__(self, input_dim, n_arms, lr=0.01, fixed_std=0.1):
-        self.n_arms = n_arms
-        self.lr = lr
-        self.fixed_std = fixed_std
-        self.weights = np.zeros((n_arms, input_dim), dtype=np.float64)
-
-    def predict(self, context_matrix):
-        means = np.einsum("ij,ij->i", self.weights, context_matrix)
-        stds = np.full_like(means, self.fixed_std)
-        return np.stack([means, stds], axis=1)
-
-    def partial_fit(self, context, arm, reward):
-        pred = np.dot(self.weights[arm], context)
-        grad = (pred - reward) * context
-        self.weights[arm] -= self.lr * grad
+    pass
 
 
 class NeuralNormalModel:
