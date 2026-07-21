@@ -81,48 +81,54 @@ class BanditCandidateWrapper:
         sort_col = 'hour_of_day' if 'hour_of_day' in df_work.columns else df_work.columns[0]
         df_sorted = df_work.sort_values(sort_col).reset_index(drop=True)
 
-        if self.algorithm_class.__name__ == 'PFNTSAlgorithm':
-            model_kwargs = self.model_kwargs.copy()
-            m_init_params = self.model_class.__init__.__code__.co_varnames
-            if 'feature_dim' in m_init_params:
-                model_kwargs['feature_dim'] = context_dim
-            elif 'd' in m_init_params:
-                model_kwargs['d'] = context_dim
+        actual_context_dim = len(feature_cols) + (1 if 'item_price' in df_work.columns else 0) + (1 if 'item_rating' in df_work.columns else 0)
+        
+        single_model_algos = {
+            'PFNTSAlgorithm',
+            'NeuralUCBAlgorithm',
+            'NNAGPUCBAlgorithm',
+            'NNAGPUCBAdaptiveAlgorithm',
+            'NNUCBAlgorithm',
+            'CustomTSBandit',
+            'SGDTSBandit',
+        }
+        
+        model_kwargs = self.model_kwargs.copy()
+        m_init_params = self.model_class.__init__.__code__.co_varnames
+        actual_model_dim = (n_arms * actual_context_dim) if self.algorithm_class.__name__ == 'SGDTSBandit' else actual_context_dim
+        if 'feature_dim' in m_init_params:
+            model_kwargs['feature_dim'] = actual_model_dim
+        if 'd' in m_init_params:
+            model_kwargs['d'] = actual_model_dim
+        if 'input_dim' in m_init_params:
+            model_kwargs['input_dim'] = actual_model_dim
+        if 'n_features' in m_init_params:
+            model_kwargs['n_features'] = actual_model_dim
 
-            model_inst = self.model_class(**model_kwargs)
-            algo_kwargs = self.algorithm_kwargs.copy()
-            algo_kwargs['n_arms'] = n_arms
-            algo_kwargs['model'] = model_inst
-            algo_kwargs['n_features'] = context_dim
-            algorithm = self.algorithm_class(**algo_kwargs)
+        if self.algorithm_class.__name__ in single_model_algos:
+            models_arg = self.model_class(**model_kwargs)
         else:
-            models = []
-            for _ in range(n_arms):
-                model_kwargs = self.model_kwargs.copy()
-                m_init_params = self.model_class.__init__.__code__.co_varnames
-                if 'feature_dim' in m_init_params:
-                    model_kwargs['feature_dim'] = context_dim
-                elif 'd' in m_init_params:
-                    model_kwargs['d'] = context_dim
-                models.append(self.model_class(**model_kwargs))
+            models_arg = [self.model_class(**model_kwargs) for _ in range(n_arms)]
 
-            algo_kwargs = self.algorithm_kwargs.copy()
-            algo_kwargs['n_arms'] = n_arms
-            algo_kwargs['model'] = models
-            
-            init_params = self.algorithm_class.__init__.__code__.co_varnames
-            if 'x_dim' in init_params:
-                algo_kwargs.setdefault('x_dim', context_dim)
-            if 'theta_dim' in init_params:
-                algo_kwargs.setdefault('theta_dim', context_dim)
-            if 'd' in init_params:
-                algo_kwargs.setdefault('d', context_dim)
-            if 'context_dim' in init_params:
-                algo_kwargs.setdefault('context_dim', context_dim)
-            if 'n_features' in init_params:
-                algo_kwargs.setdefault('n_features', context_dim)
-            
-            algorithm = self.algorithm_class(**algo_kwargs)
+        algo_kwargs = self.algorithm_kwargs.copy()
+        algo_kwargs['n_arms'] = n_arms
+        algo_kwargs['model'] = models_arg
+        
+        init_params = self.algorithm_class.__init__.__code__.co_varnames
+        if 'x_dim' in init_params:
+            algo_kwargs['x_dim'] = actual_context_dim
+        if 'theta_dim' in init_params:
+            algo_kwargs['theta_dim'] = actual_context_dim
+        if 'd' in init_params:
+            algo_kwargs['d'] = actual_context_dim
+        if 'context_dim' in init_params:
+            algo_kwargs['context_dim'] = actual_context_dim
+        if 'n_features' in init_params:
+            algo_kwargs['n_features'] = actual_context_dim
+        if 'input_dim' in init_params:
+            algo_kwargs['input_dim'] = actual_context_dim
+        
+        algorithm = self.algorithm_class(**algo_kwargs)
 
         n_play = min(5000, len(df_sorted))
         step = max(1, len(df_sorted) // n_play)
@@ -134,7 +140,7 @@ class BanditCandidateWrapper:
                 break
                 
             row = df_sorted.iloc[idx]
-            user_features = row[feature_cols].fillna(0).values.astype(float)
+            user_features = row[feature_cols].fillna(0).values.astype(np.float32)
             
             contexts = []
             for item_id in item_ids:
@@ -147,14 +153,13 @@ class BanditCandidateWrapper:
                 context = np.concatenate([user_features, item_feats]) if item_feats else user_features
                 contexts.append(context)
             
-            context_array = np.array(contexts, dtype=float)
+            context_array = np.array(contexts, dtype=np.float32)
             
-            try:
-                chosen_arm = algorithm.select_arm(context_array)
-                actions_taken.append(idx_to_item[chosen_arm])
-            except Exception:
-                chosen_arm = np.random.randint(n_arms)
-                actions_taken.append(idx_to_item[chosen_arm])
+            chosen_arm = algorithm.select_arm(context_array)
+            actions_taken.append(idx_to_item[chosen_arm])
+            
+            reward = float(row['reward']) if 'reward' in row and pd.notna(row['reward']) else 1.0
+            algorithm.update([{'context': context_array, 'action': int(chosen_arm), 'reward': reward}])
 
         action_counts = Counter(actions_taken)
         total = len(actions_taken)

@@ -32,10 +32,18 @@ class GLMLaplaceModel(BaseModel):
         mu = expit(x @ self.theta_map)
         try:
             cov = np.linalg.inv(self.hessian) * (self.alpha ** 2)
-            sigma = float(np.sqrt(np.abs(x @ cov @ x)))
+            if x.ndim == 2:
+                sigma = np.sqrt(np.abs(np.einsum('id,de,ie->i', x, cov, x)))
+            else:
+                sigma = np.array([float(np.sqrt(np.abs(x @ cov @ x)))])
+                mu = np.array([float(mu)])
         except np.linalg.LinAlgError:
-            sigma = self.alpha
-        return np.array([float(mu)]), np.array([sigma])
+            if x.ndim == 2:
+                sigma = np.full(x.shape[0], self.alpha)
+            else:
+                sigma = np.array([self.alpha])
+                mu = np.array([float(mu)])
+        return mu, sigma
 
     def sample(self, x: np.ndarray) -> np.ndarray:
         try:

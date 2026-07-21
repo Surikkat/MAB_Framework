@@ -17,10 +17,10 @@ from .contextual import (
     GPUCBKernelFlexibleAlgorithm,
 )
 
-# try:
-#     from .contextual import RegcbBanit
-# except ImportError:
-#     pass
+try:
+    from .contextual import RegCBBandit
+except ImportError:
+    pass
 
 try:
     from .neural import (

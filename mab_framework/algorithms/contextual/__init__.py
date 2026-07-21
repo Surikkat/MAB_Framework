@@ -4,6 +4,6 @@ from .gpts_bandit import GPTSBandit
 from .gp_ucb_multikernel import GPUCBKernelFlexibleAlgorithm
 
 try:
-    from .regcb_bandit import RegcbBanit
+    from .regcb_bandit import RegCBBandit
 except ImportError:
     pass

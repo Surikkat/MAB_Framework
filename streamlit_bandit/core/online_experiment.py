@@ -127,9 +127,9 @@ def get_available_algorithms_for_online():
         {
             'name': 'Bootstrap TS',
             'algo_name': 'BootstrapTSBandit',
-            'params': {'d': 5, 'n_models': 10, 'lr': 0.01},
-            'model_name': None,
-            'model_params': None,
+            'params': {},
+            'model_name': 'BootstrapEnsembleModel',
+            'model_params': {'n_models': 10, 'lr': 0.01},
             'category': '🚀 Stochastic',
         },
         {
@@ -180,6 +180,78 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '🧠 Neural',
         },
+        {
+            'name': 'FGTS',
+            'algo_name': 'FGTSAlgorithm',
+            'params': {},
+            'model_name': 'FGTSModel',
+            'model_params': {},
+            'category': '⚡ Special',
+        },
+        {
+            'name': 'FGTS Lasso',
+            'algo_name': 'FGTSAlgorithm',
+            'params': {},
+            'model_name': 'FGTSLassoModel',
+            'model_params': {},
+            'category': '⚡ Special',
+        },
+        {
+            'name': 'RegCB',
+            'algo_name': 'RegCBBandit',
+            'params': {},
+            'model_name': 'OnlineRidgeRegression',
+            'model_params': {'l2_reg': 1.0},
+            'category': '⚡ Special',
+        },
+        {
+            'name': 'SGD-TS',
+            'algo_name': 'SGDTSBandit',
+            'params': {},
+            'model_name': 'SGDModel',
+            'model_params': {},
+            'category': '⚡ Special',
+        },
+        {
+            'name': 'Custom TS (GLM Laplace)',
+            'algo_name': 'CustomTSBandit',
+            'params': {},
+            'model_name': 'GLMLaplaceModel',
+            'model_params': {},
+            'category': '🔮 Bayesian',
+        },
+        {
+            'name': 'NN-AGP Adaptive',
+            'algo_name': 'NNAGPUCBAdaptiveAlgorithm',
+            'params': {'beta': 2.0},
+            'model_name': 'NNAGPModel',
+            'model_params': {},
+            'category': '🧠 Neural',
+        },
+        {
+            'name': 'NN-UCB',
+            'algo_name': 'NNUCBAlgorithm',
+            'params': {'beta': 2.0},
+            'model_name': 'NNUCBModel',
+            'model_params': {},
+            'category': '🧠 Neural',
+        },
+        {
+            'name': 'NN-TS-B',
+            'algo_name': 'NNTSBAlgorithm',
+            'params': {},
+            'model_name': 'NeuralLinearModel',
+            'model_params': {},
+            'category': '🧠 Neural',
+        },
+        {
+            'name': 'Neural Bandit (Limited Memory)',
+            'algo_name': 'NeuralBanditWithLimitedMemory_5',
+            'params': {},
+            'model_name': 'NeuralLinearModel',
+            'model_params': {},
+            'category': '🧠 Neural',
+        },
     ]
     return pd.DataFrame(algos)
 
@@ -195,12 +267,27 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
             ModelClass = getattr(models, algo_row['model_name'])
             m_params = dict(algo_row['model_params'])
             m_init_params = ModelClass.__init__.__code__.co_varnames
+            
+            model_feature_dim = (n_arms * feature_dim) if algo_row['algo_name'] == 'SGDTSBandit' else feature_dim
             if 'feature_dim' in m_init_params:
-                m_params['feature_dim'] = feature_dim
+                m_params['feature_dim'] = model_feature_dim
             elif 'd' in m_init_params:
-                m_params['d'] = feature_dim
+                m_params['d'] = model_feature_dim
+            elif 'input_dim' in m_init_params:
+                m_params['input_dim'] = model_feature_dim
+            elif 'n_features' in m_init_params:
+                m_params['n_features'] = model_feature_dim
                 
-            if algo_row['algo_name'] == 'PFNTSAlgorithm':
+            single_model_algos = {
+                'PFNTSAlgorithm',
+                'NeuralUCBAlgorithm',
+                'NNAGPUCBAlgorithm',
+                'NNAGPUCBAdaptiveAlgorithm',
+                'NNUCBAlgorithm',
+                'CustomTSBandit',
+                'SGDTSBandit',
+            }
+            if algo_row['algo_name'] in single_model_algos:
                 model = ModelClass(**m_params)
             else:
                 model = [ModelClass(**m_params) for _ in range(n_arms)]
@@ -218,6 +305,8 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
             a_params['n_features'] = feature_dim
         if 'context_dim' in init_params:
             a_params['context_dim'] = feature_dim
+        if 'input_dim' in init_params:
+            a_params['input_dim'] = feature_dim
             
         if model is not None:
             a_params['model'] = model
@@ -269,7 +358,7 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
             result = runner.run()
             all_results[algo_name] = result
             env.reset()
-        except Exception as e:
+        except BaseException as e:
             all_results[algo_name] = {"error": str(e)}
     
     return all_results

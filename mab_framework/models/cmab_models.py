@@ -22,15 +22,32 @@ class LinearNormalModel:
         self.weights = np.zeros((n_arms, input_dim), dtype=dtype)
 
     def predict(self, context):
-        means = np.einsum('ij,ij->i', self.weights, context)
+        if context.ndim == 1:
+            means = self.weights @ context
+        else:
+            if context.shape[0] == self.weights.shape[0]:
+                means = np.einsum('ij,ij->i', self.weights, context)
+            else:
+                means = context @ self.weights[0]
         stds = np.full_like(means, self.fixed_std)
         return np.stack([means, stds], axis=1)
 
     def partial_fit(self, context, action, reward):
-        pred = self.weights[action] @ context
+        act = action if action < self.weights.shape[0] else 0
+        pred = self.weights[act] @ context
         error = pred - reward
         grad = error * context
-        self.weights[action] -= self.lr * grad
+        self.weights[act] -= self.lr * grad
+
+    def fit(self, context, reward, action=0):
+        self.partial_fit(context, action, reward)
+
+    def sample(self, context):
+        pred = self.predict(context)
+        if context.ndim == 1 or pred.shape[0] == 1:
+            mu, std = pred[0, 0], pred[0, 1]
+            return float(np.random.normal(mu, std))
+        return np.random.normal(pred[:, 0], pred[:, 1])
 
 
 class GLMNormalModel(LinearNormalModel):
@@ -91,3 +108,17 @@ class NeuralNormalModel:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+    def fit(self, context_vector, reward, arm=0):
+        self.partial_fit(context_vector, arm, reward)
+
+    def sample(self, context):
+        if context.ndim == 1:
+            x = self._prepare_input(context, 0)
+            x = torch.tensor(x, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                mu = float(self.model(x).squeeze().item())
+            return float(np.random.normal(mu, self.fixed_std))
+        else:
+            preds = self.predict(context)
+            return np.array([np.random.normal(mu, sigma) for mu, sigma in preds])

@@ -253,8 +253,8 @@ if mode == "📊 Offline (OPE)":
                         result['category'] = candidate['category']
                         result['complexity'] = candidate['complexity']
                         results.append(result)
-                    except Exception as e:
-                        st.warning(f"⚠️ {algo_name}: {str(e)[:100]}")
+                    except BaseException as e:
+                        st.warning(f"⚠️ {algo_name}: {str(e)[:150]}")
                 
                 overall_progress.progress(1.0, text=f"Готово: {total}/{total} ✅")
                 algo_progress.progress(1.0, text="✅")
@@ -486,22 +486,25 @@ else:
             def progress_callback(msg):
                 progress_text.text(msg)
             
-            all_results = run_online_experiment(
-                env_row, selected_algos_df,
-                env_params=env_params,  # ← добавить
-                steps=steps, n_runs=n_runs,
-                progress_callback=progress_callback
-            )
-            
-            overall_progress.progress(1.0, text="Готово! ✅")
-            progress_text.empty()
-            
-            st.session_state['online_results'] = all_results
-            st.session_state['online_env'] = selected_env
-            st.session_state['online_steps_saved'] = steps
-            st.session_state['online_runs_saved'] = n_runs
-            st.success("✅ Эксперимент завершён!")
-            st.balloons()
+            try:
+                all_results = run_online_experiment(
+                    env_row, selected_algos_df,
+                    env_params=env_params,  # ← добавить
+                    steps=steps, n_runs=n_runs,
+                    progress_callback=progress_callback
+                )
+                overall_progress.progress(1.0, text="Готово! ✅")
+                progress_text.empty()
+                
+                st.session_state['online_results'] = all_results
+                st.session_state['online_env'] = selected_env
+                st.session_state['online_steps_saved'] = steps
+                st.session_state['online_runs_saved'] = n_runs
+                st.success("✅ Эксперимент завершён!")
+                st.balloons()
+            except BaseException as e:
+                progress_text.empty()
+                st.error(f"❌ Критическая ошибка при запуске эксперимента: {e}")
     
     if st.session_state.get('online_results'):
         all_results = st.session_state['online_results']
@@ -510,6 +513,10 @@ else:
         st.divider()
         st.header("📊 Результаты онлайн-эксперимента")
         st.caption(f"Среда: {st.session_state.get('online_env', '')} | Шагов: {s} | Запусков: {st.session_state.get('online_runs_saved', '')}")
+        
+        for name, data in all_results.items():
+            if 'error' in data:
+                st.error(f"⚠️ **{name}** не смог запуститься: `{data['error']}`")
         
         results_df = format_results_table(all_results, s)
         st.subheader("🏆 Leaderboard")

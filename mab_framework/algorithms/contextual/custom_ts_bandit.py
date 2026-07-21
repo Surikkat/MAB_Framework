@@ -43,10 +43,16 @@ class CustomTSBandit(BaseAlgorithm):
     def select_arm(self, context: np.ndarray) -> int:
         transformed_context = self._transform(context)
         params = self.model.predict(transformed_context)
+        if isinstance(params, tuple) and len(params) == 2 and hasattr(params[0], '__len__'):
+            params = list(zip(params[0], params[1]))
 
         rewards = []
         for i in range(self.n_arms):
             p1, p2 = params[i]
+            if hasattr(p1, '__len__'):
+                p1 = float(p1[0])
+            if hasattr(p2, '__len__'):
+                p2 = float(p2[0])
             if self.dist_type == "normal":
                 sampled = np.random.normal(loc=p1, scale=p2)
             elif self.dist_type == "beta":
@@ -64,7 +70,18 @@ class CustomTSBandit(BaseAlgorithm):
             context = fb["context"]
             ctx = context[action] if context.ndim > 1 else context
             context_transformed = self._transform(ctx)
-            self.model.partial_fit(context_transformed, action, reward)
+            if hasattr(self.model, 'partial_fit'):
+                try:
+                    self.model.partial_fit(context_transformed, action, reward)
+                except TypeError:
+                    self.model.partial_fit(context_transformed, reward)
+            elif hasattr(self.model, 'fit'):
+                try:
+                    self.model.fit(context_transformed, action, reward)
+                except TypeError:
+                    self.model.fit(context_transformed, reward)
+            elif hasattr(self.model, 'update'):
+                self.model.update(context_transformed, action, reward)
 
     def train(self):
         pass
