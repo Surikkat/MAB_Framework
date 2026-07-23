@@ -5,5 +5,6 @@ try:
     from .nn_agp_ucb import NNAGPUCBAlgorithm
     from .nn_agp_adaptive import NNAGPUCBAdaptiveAlgorithm
     from .nn_bandit_limited_memory import NeuralBanditWithLimitedMemory_5
+    from .pfn_ts import PFNTSAlgorithm
 except ImportError:
     pass

@@ -1,6 +1,8 @@
 import numpy as np
 from typing import List, Dict, Any
 from ..base import BaseAlgorithm
+from ...models.bootstrap_model import BootstrapEnsembleModel
+
 
 class BootstrapTSBandit(BaseAlgorithm):
     """

@@ -14,7 +14,7 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
     def __init__(self,
                  n_arms: int,
                  model,
-                 T: int,
+                 T: int = 10000,
                  lambd: float = 1.0,
                  nu: float = 1.0,
                  delta: float = 0.01,
@@ -23,8 +23,10 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
                  L: int = 2,
                  C1: float = 1.0,
                  C2: float = 1.0,
-                 C3: float = 1.0):
-        super().__init__(n_arms, model)
+                 C3: float = 1.0,
+                 use_adaptive_gamma: bool = True,
+                 **kwargs):
+        super().__init__(n_arms=n_arms, model=model)
         self.T = T
         self.lambd = lambd
         self.nu = nu
@@ -36,10 +38,11 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
         self.C2 = C2
         self.C3 = C3
 
-        if hasattr(self.model, "p"):
-            self.p = self.model.p
+        m_ref = self.model[0] if isinstance(self.model, list) else self.model
+        if hasattr(m_ref, "p"):
+            self.p = m_ref.p
         else:
-            self.p = self.model.theta0_vec.size
+            self.p = m_ref.theta0_vec.size
             
         self.Z = (lambd * np.eye(self.p)).astype(np.float64)
 

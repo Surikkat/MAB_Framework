@@ -15,8 +15,9 @@ class NNUCBAlgorithm(BaseAlgorithm):
         super().__init__(n_arms, model)
         self.lambda_ = float(lambda_)
         
-        if hasattr(self.model, "num_params"):
-            num_params = self.model.num_params
+        m_ref = self.model[0] if isinstance(self.model, list) else self.model
+        if hasattr(m_ref, "num_params"):
+            num_params = m_ref.num_params
         else:
             raise ValueError("Provided model to NNUCBAlgorithm must expose 'num_params' for A_diag sizing.")
             

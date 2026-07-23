@@ -26,8 +26,7 @@ class BootstrapEnsembleModel(BaseModel):
             if np.random.rand() < self.bootstrap_prob:
                 pred = self.models[i] @ x
                 error = pred - y
-                grad = error * x
-                self.models[i] -= self.lr * grad
+                self.models[i] -= self.lr * error * x
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         preds = np.array([m @ x for m in self.models])

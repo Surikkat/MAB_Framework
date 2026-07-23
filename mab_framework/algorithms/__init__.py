@@ -37,6 +37,7 @@ try:
         NNAGPUCBAlgorithm,
         NNAGPUCBAdaptiveAlgorithm,
         NeuralBanditWithLimitedMemory_5,
+        PFNTSAlgorithm,
     )
 except ImportError:
     pass

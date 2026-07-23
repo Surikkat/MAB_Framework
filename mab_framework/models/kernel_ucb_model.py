@@ -11,7 +11,7 @@ class KernelUCBModel(BaseModel):
     Valko, M., Korda, N., Munos, R., Flaounas, I., & Cristianini, N. (2013). 
     "Finite-time analysis of kernelised contextual bandits." UAI.
     """
-    def __init__(self, kernel='rbf', gamma: float = 1.0, lam: float = 1e-3, beta: float = 1.0):
+    def __init__(self, kernel='rbf', gamma: float = 1.0, lam: float = 1e-3, beta: float = 1.0, **kwargs):
         self.kernel = kernel
         self.gamma = gamma
         self.lam = lam

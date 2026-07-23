@@ -6,7 +6,7 @@ class ExactGPModel(BaseModel):
     """
     Exact Gaussian Process Model with RBF kernel and per-arm history.
     """
-    def __init__(self, gamma: float = 1.0, sigma_noise: float = 0.1, window_size: int = None):
+    def __init__(self, gamma: float = 1.0, sigma_noise: float = 0.1, window_size: int = None, **kwargs):
         self.gamma = gamma
         self.sigma_noise = sigma_noise
         self.window_size = window_size

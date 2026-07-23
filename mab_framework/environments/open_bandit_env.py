@@ -71,6 +71,7 @@ class OpenBanditEnvironment(BaseEnvironment):
         self.contexts = feedback["context"]
         self.logged_actions = feedback["action"]
         self.rewards = feedback["reward"]
+        self.pscore = feedback["pscore"]
         self.n_arms = feedback["n_actions"]
         self.reward_mode = reward_mode
 

@@ -21,12 +21,20 @@ class _DNN(nn.Module):
         self.fc3 = nn.Linear(g, n_arms)
 
     def forward(self, x):
+        if not isinstance(x, torch.Tensor):
+            x = torch.as_tensor(x, dtype=torch.float32)
+        elif x.dtype != torch.float32:
+            x = x.to(torch.float32)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
 
         return self.fc3(x)
 
     def get_phi(self, x):
+        if not isinstance(x, torch.Tensor):
+            x = torch.as_tensor(x, dtype=torch.float32)
+        elif x.dtype != torch.float32:
+            x = x.to(torch.float32)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return x
@@ -42,17 +50,17 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
     and Online Optimization." AAAI.
     """
     def __init__(self,
-                 buffer_size,
-                 min_buffer_size,
-                 n_arms,
-                 g,
-                 L,
-                 input_dim,
+                 buffer_size: int = 1000,
+                 min_buffer_size: int = 10,
+                 n_arms: int = 2,
+                 g: int = 10,
+                 L: int = 2,
+                 input_dim: int = 10,
                  epsilon=1e-6,
                  lambda_prior=0.1,
                  a_0=6.0, b_0=6.0,
                  P=400,
-                 batch_size=1, lr=1e-3, model=None):
+                 batch_size=1, lr=1e-3, model=None, **kwargs):
         """
         buffer_size - size of the buffer that stores the results of the last n iterations
         n_arms - number of actions
@@ -204,7 +212,11 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
     def _update_buffer(self, context, arm, reward):
         if len(self.E) == self.buffer_size:
             self.E.pop(0)
-        self.E.append((torch.tensor(context), arm, reward))
+        if not isinstance(context, torch.Tensor):
+            context = torch.as_tensor(context, dtype=torch.float32)
+        elif context.dtype != torch.float32:
+            context = context.to(torch.float32)
+        self.E.append((context, arm, reward))
 
     def update(self, feedbacks: List[Dict[str, Any]]) -> None:
         trigger_training = False
