@@ -17,10 +17,17 @@ from .contextual import (
     GPUCBKernelFlexibleAlgorithm,
 )
 
-try:
-    from .contextual import RegCBBandit
-except ImportError:
-    pass
+from .delayed import (
+    JoulaniDelayedUCB,
+    PatientBandits,
+    VernadeDelayedUCB,
+    DelayedThompsonSampling,
+)
+
+# try:
+#     from .contextual import RegcbBanit
+# except ImportError:
+#     pass
 
 try:
     from .neural import (
