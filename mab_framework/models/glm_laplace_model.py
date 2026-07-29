@@ -31,11 +31,14 @@ class GLMLaplaceModel(BaseModel):
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         mu = expit(x @ self.theta_map)
         try:
-            cov = np.linalg.inv(self.hessian) * (self.alpha ** 2)
             if x.ndim == 2:
-                sigma = np.sqrt(np.abs(np.einsum('id,de,ie->i', x, cov, x)))
+                solved = np.linalg.solve(self.hessian, x.T)
+                var = np.sum(x.T * solved, axis=0) * (self.alpha ** 2)
+                sigma = np.sqrt(np.abs(var))
             else:
-                sigma = np.array([float(np.sqrt(np.abs(x @ cov @ x)))])
+                solved = np.linalg.solve(self.hessian, x)
+                var = (x @ solved) * (self.alpha ** 2)
+                sigma = np.array([float(np.sqrt(np.abs(var)))])
                 mu = np.array([float(mu)])
         except np.linalg.LinAlgError:
             if x.ndim == 2:
@@ -47,8 +50,9 @@ class GLMLaplaceModel(BaseModel):
 
     def sample(self, x: np.ndarray) -> np.ndarray:
         try:
-            cov = np.linalg.inv(self.hessian) * (self.alpha ** 2)
-            theta_sample = np.random.multivariate_normal(self.theta_map, cov)
+            L = np.linalg.cholesky(self.hessian)
+            z = np.random.standard_normal(self.d)
+            theta_sample = self.theta_map + self.alpha * np.linalg.solve(L.T, z)
         except np.linalg.LinAlgError:
             theta_sample = self.theta_map
         mu = expit(x @ theta_sample)

@@ -73,10 +73,11 @@ class LogDataEnvironment(BaseEnvironment):
         self.delay_buffer.queue.clear()
         self.delay_buffer.current_time = 0
 
-    def get_context(self):
+    def get_context(self) -> np.ndarray:
         if self.current_idx >= self.T:
             raise IndexError("End of dataset reached")
-        return np.tile(self.contexts[self.current_idx], (self.n_arms, 1))
+        ctx = self.contexts[self.current_idx]
+        return np.broadcast_to(ctx, (self.n_arms, len(ctx)))
 
     def _step_raw(self, action):
         if self.current_idx >= self.T:

@@ -19,17 +19,16 @@ class BootstrapEnsembleModel(BaseModel):
         self.reset()
 
     def reset(self):
-        self.models = [np.zeros(self.d) for _ in range(self.n_models)]
+        self.models = np.zeros((self.n_models, self.d))
 
     def fit(self, x: np.ndarray, y: float) -> None:
-        for i in range(self.n_models):
-            if np.random.rand() < self.bootstrap_prob:
-                pred = self.models[i] @ x
-                error = pred - y
-                self.models[i] -= self.lr * error * x
+        mask = (np.random.rand(self.n_models) < self.bootstrap_prob)
+        preds = self.models @ x
+        errors = preds - y
+        self.models -= self.lr * (errors * mask)[:, None] * x
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        preds = np.array([m @ x for m in self.models])
+        preds = self.models @ x
         return np.array([np.mean(preds)]), np.array([np.std(preds) + self.fixed_std])
 
     def sample(self, x: np.ndarray) -> np.ndarray:

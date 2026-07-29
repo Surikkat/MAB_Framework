@@ -37,10 +37,12 @@ class KernelUCBModel(BaseModel):
         K_mat = self._rbf_kernel(X_a, X_a) + self.lam * np.eye(len(X_a))
         k_vec = self._rbf_kernel(X_a, x_row).flatten()
 
-        alpha = np.linalg.solve(K_mat, Y_a)
+        L = np.linalg.cholesky(K_mat)
+        alpha = np.linalg.solve(L.T, np.linalg.solve(L, Y_a))
         mu = k_vec @ alpha
 
-        sigma = np.sqrt(self.beta * (1 - k_vec @ np.linalg.solve(K_mat, k_vec)))
+        v = np.linalg.solve(L, k_vec)
+        sigma = np.sqrt(self.beta * (1 - v @ v))
 
         return np.array([mu]), np.array([sigma])
 

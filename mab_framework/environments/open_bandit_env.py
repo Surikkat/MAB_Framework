@@ -93,7 +93,7 @@ class OpenBanditEnvironment(BaseEnvironment):
                 f"but dataset has only {self.T} entries."
             )
         ctx = self.contexts[self.current_idx]
-        return np.tile(ctx, (self.n_arms, 1))
+        return np.broadcast_to(ctx, (self.n_arms, len(ctx)))
 
     def _step_raw(self, action: int) -> tuple[float, float]:
         if self.current_idx >= self.T:

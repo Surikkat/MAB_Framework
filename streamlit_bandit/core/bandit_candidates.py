@@ -421,14 +421,22 @@ class BanditCandidatePool:
                 'category': '⚡ Special',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(FGTSAlgorithm, {}, FGTSLassoModel, {'feature_dim': dim})
-            },
-            {
+            }
+        ]
+        
+        try:
+            import vowpalwabbit
+            candidates.append({
                 'name': 'RegCB',
                 'description': 'Regression-based Confidence Bound',
                 'category': '⚡ Special',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(RegCBBandit, {}, OnlineRidgeRegression, {'feature_dim': dim})
-            },
+            })
+        except ImportError:
+            pass
+            
+        candidates.extend([
             {
                 'name': 'SGD-TS',
                 'description': 'Stochastic Gradient Descent Thompson Sampling',
@@ -443,6 +451,6 @@ class BanditCandidatePool:
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(ThompsonSampling, {}, LinearNormalModel, {'feature_dim': dim})
             },
-        ]
+        ])
         
         return pd.DataFrame(candidates)

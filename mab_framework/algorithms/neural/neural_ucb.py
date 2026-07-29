@@ -62,7 +62,7 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
         J = getattr(self.model, 'J', 20)
 
         signZ, logdetZ = np.linalg.slogdet(self.Z + self._eps*np.eye(self.p))
-        signLam, logdetLam = np.linalg.slogdet(lambd * np.eye(self.p))
+        logdetLam = self.p * np.log(lambd)
         log_det_ratio = logdetZ - logdetLam
         if log_det_ratio < 0:
             log_det_ratio = max(log_det_ratio, -1e6)
@@ -140,8 +140,17 @@ class NeuralUCBAlgorithm(BaseAlgorithm):
             self.model.fit(x_chosen, reward)
 
             g_vec = self.model.get_grad_features(x_chosen)
-            self.Z += np.outer(g_vec, g_vec) / float(self.m)
-            self._Z_inv_valid = False
+            g_vec_m = g_vec / np.sqrt(float(self.m))
+            
+            # Update Z
+            self.Z += np.outer(g_vec_m, g_vec_m)
+            
+            # Sherman-Morrison update for Z_inv
+            Z_inv = self._ensure_Z_inv()
+            Z_inv_g = Z_inv.dot(g_vec_m)
+            denom = 1.0 + g_vec_m.dot(Z_inv_g)
+            self._Z_inv_cache = Z_inv - np.outer(Z_inv_g, Z_inv_g) / denom
+            self._Z_inv_valid = True
             
         if len(feedbacks) > 0:
             self.model.finalize_update()

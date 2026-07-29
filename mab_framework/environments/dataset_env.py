@@ -43,7 +43,7 @@ class BaseDatasetEnvironment(BaseEnvironment):
             return self.contexts_per_step[self.current_step]
         elif self.context_mode == 'flat':
             context_flat = self.contexts[self.current_step]
-            return np.tile(context_flat, (self.n_arms, 1))
+            return np.broadcast_to(context_flat, (self.n_arms, len(context_flat)))
         else:
             return self.contexts
 

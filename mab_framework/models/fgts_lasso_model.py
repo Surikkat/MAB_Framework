@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.linear_model import Lasso
+from collections import deque
 from .base import BaseModel
 
 class FGTSLassoModel(BaseModel):
@@ -19,8 +20,8 @@ class FGTSLassoModel(BaseModel):
         self.sigma_noise = sigma_noise
         self.sigma_prior = sigma_prior
         self.t = 0
-        self.X_hist = []
-        self.Y_hist = []
+        self.X_hist = deque(maxlen=window)
+        self.Y_hist = deque(maxlen=window)
         self.active_set = set(range(feature_dim))
         self.mu = np.zeros(feature_dim)
         self.Sigma = np.eye(feature_dim) * sigma_prior**2
@@ -30,20 +31,19 @@ class FGTSLassoModel(BaseModel):
         self.t += 1
         self.X_hist.append(x)
         self.Y_hist.append(y)
-        if len(self.X_hist) > self.window:
-            self.X_hist = self.X_hist[-self.window:]
-            self.Y_hist = self.Y_hist[-self.window:]
+
+        X_a = np.vstack(self.X_hist)
+        y_vec = np.array(self.Y_hist)
+
         if self.t >= self.lasso_start and self.t % self.lasso_period == 0:
-            X_a = np.vstack(self.X_hist)
-            y_a = np.array(self.Y_hist)
             alpha = self.lasso_alpha or np.sqrt(np.log(self.feature_dim) / max(1, X_a.shape[0]))
             lasso = Lasso(alpha=alpha, fit_intercept=False, max_iter=1000)
-            lasso.fit(X_a, y_a)
+            lasso.fit(X_a, y_vec)
             self.active_set = set(np.where(np.abs(lasso.coef_) > 1e-8)[0])
+
         idx = list(self.active_set)
         if idx:
-            X_sub = np.vstack(self.X_hist)[:, idx]
-            y_vec = np.array(self.Y_hist)
+            X_sub = X_a[:, idx]
             Sigma_inv = np.linalg.inv(self.Sigma[np.ix_(idx, idx)])
             Sigma_new = np.linalg.inv(Sigma_inv + (1/self.sigma_noise**2) * X_sub.T @ X_sub)
             mu_new = Sigma_new @ (Sigma_inv @ self.mu[idx] + (1/self.sigma_noise**2) * X_sub.T @ y_vec)

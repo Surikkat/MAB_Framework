@@ -33,18 +33,18 @@ class OnlineRidgeRegression(BaseModel):
         return np.array([expected_reward]), np.array([uncertainty])
 
     def sample(self, x: np.ndarray) -> np.ndarray:
+        nu_t = self.nu / np.sqrt(self.t + 1)
         try:
             L = np.linalg.cholesky(self.A)
             theta_hat = np.linalg.solve(L.T, np.linalg.solve(L, self.b))
-            A_inv = np.linalg.solve(L.T, np.linalg.solve(L, np.eye(self.feature_dim)))
+            z = np.random.standard_normal(self.feature_dim)
+            theta_sample = theta_hat + nu_t * np.linalg.solve(L.T, z)
         except np.linalg.LinAlgError:
             theta_hat = np.linalg.solve(self.A, self.b)
             A_inv = np.linalg.solve(self.A, np.eye(self.feature_dim))
-            
-        nu_t = self.nu / np.sqrt(self.t + 1)
-        cov = (nu_t ** 2) * A_inv + 1e-6 * np.eye(self.feature_dim)
-        try:
-            theta_sample = np.random.multivariate_normal(theta_hat, cov)
-        except np.linalg.LinAlgError:
-            theta_sample = theta_hat
+            cov = (nu_t ** 2) * A_inv + 1e-6 * np.eye(self.feature_dim)
+            try:
+                theta_sample = np.random.multivariate_normal(theta_hat, cov)
+            except np.linalg.LinAlgError:
+                theta_sample = theta_hat
         return np.array([np.dot(theta_sample, x)])
