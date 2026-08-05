@@ -6,6 +6,12 @@ import numpy as np
 from mab_framework.experiment.metrics import MetricsTracker
 from mab_framework.experiment.logger import Logger
 
+try:
+    import torch
+    _torch_available = True
+except ImportError:
+    _torch_available = False
+
 
 class ExperimentRunner:
     def __init__(self, env, algorithm_factory, steps: int, n_runs: int = 1,
@@ -19,6 +25,8 @@ class ExperimentRunner:
         self.seed = seed
         self.save_dir = save_dir
         self.metadata = metadata or {}
+        if self.save_dir:
+            os.makedirs(self.save_dir, exist_ok=True)
 
     def _get_run_seed(self, run_idx):
         if self.seed is not None:
@@ -38,25 +46,22 @@ class ExperimentRunner:
             run_seed = self._get_run_seed(run)
             random.seed(run_seed)
             np.random.seed(run_seed)
-            try:
-                import torch
+            if _torch_available:
                 torch.manual_seed(run_seed)
                 if torch.cuda.is_available():
                     torch.cuda.manual_seed_all(run_seed)
-            except ImportError:
-                pass
 
             if hasattr(self.env, 'reset'):
                 self.env.reset()
 
             algorithm = self.algorithm_factory()
-            tracker = MetricsTracker()
+            tracker = MetricsTracker(n_steps=self.steps)
 
             for step in range(self.steps):
                 start_time = time.time()
                 context = self.env.get_context()
                 action = algorithm.select_arm(context)
-                step_result = self.env.step(action)
+                step_result = self.env.step(action, context=context)
 
                 if isinstance(step_result, dict) and "available_rewards" in step_result:
                     available_rewards = step_result["available_rewards"]
@@ -102,7 +107,6 @@ class ExperimentRunner:
         return aggregated
 
     def _save_run(self, run_idx, run_seed, metrics):
-        os.makedirs(self.save_dir, exist_ok=True)
         run_data = {
             **self.metadata,
             "seed": run_seed,

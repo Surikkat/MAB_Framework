@@ -94,6 +94,12 @@ if mode == "📊 Offline (OPE)":
         validator = LogValidator()
         is_valid, warnings = validator.validate(df_log)
         
+        if not is_valid:
+            st.error("❌ Данные не прошли валидацию. Проверьте обязательные колонки.")
+            for w in warnings:
+                st.warning(w)
+            st.stop()
+        
         # Метрики
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -253,16 +259,23 @@ if mode == "📊 Offline (OPE)":
                         result['category'] = candidate['category']
                         result['complexity'] = candidate['complexity']
                         results.append(result)
-                    except BaseException as e:
+                    except (Exception, SystemExit) as e:
                         st.warning(f"⚠️ {algo_name}: {str(e)[:150]}")
                 
-                overall_progress.progress(1.0, text=f"Готово: {total}/{total} ✅")
                 algo_progress.progress(1.0, text="✅")
                 status_text.empty()
                 
-                st.session_state['benchmark_results'] = results
-                st.success(f"✅ Оценено {len(results)} алгоритмов!")
-                st.balloons()
+                if len(results) == 0:
+                    overall_progress.progress(1.0, text=f"Ошибки: {total}/{total} ❌")
+                    st.error(f"❌ Ни один алгоритм не прошёл оценку ({total} ошибок).")
+                else:
+                    overall_progress.progress(1.0, text=f"Готово: {len(results)}/{total} ✅")
+                    st.session_state['benchmark_results'] = results
+                    if len(results) < total:
+                        st.warning(f"⚠️ Оценено {len(results)} из {total} алгоритмов ({total - len(results)} ошибок).")
+                    else:
+                        st.success(f"✅ Все {len(results)} алгоритмов оценены успешно!")
+                        st.balloons()
 
         if st.session_state.get('benchmark_results'):
             results = st.session_state['benchmark_results']
@@ -319,8 +332,8 @@ if mode == "📊 Offline (OPE)":
                 lambda x: f"+{(x-baseline_ctr)/baseline_ctr*100:.1f}%" if x > baseline_ctr else f"{(x-baseline_ctr)/baseline_ctr*100:.1f}%"
             )
             display_df['ESS'] = display_df['effective_sample_size'].apply(lambda x: f"{x:,.0f}" if x < 1000 else f"{x/1000:.1f}K")
-            display_df['DM'] = display_df.get('dm_score', display_df['dr_score']).apply(lambda x: f"{x*100:.3f}%")
-            display_df['IPS'] = display_df.get('ips_score', display_df['dr_score']).apply(lambda x: f"{x*100:.3f}%")
+            display_df['DM'] = display_df['dm_score'].apply(lambda x: f"{x*100:.3f}%") if 'dm_score' in display_df.columns else "N/A"
+            display_df['IPS'] = display_df['ips_score'].apply(lambda x: f"{x*100:.3f}%") if 'ips_score' in display_df.columns else "N/A"
             display_df['DR'] = display_df['dr_score'].apply(lambda x: f"{x*100:.3f}%")
             display_df = display_df.sort_values('dr_score', ascending=False)
             
@@ -335,9 +348,8 @@ if mode == "📊 Offline (OPE)":
                 csv = display_df.to_csv(index=False)
                 st.download_button("Скачать CSV", csv, f"benchmark_{datetime.now().strftime('%Y%m%d_%H%M')}.csv", "text/csv", use_container_width=True)
             with c2:
-                if st.button("📄 Скачать PDF-отчёт", key="offline_pdf_btn", use_container_width=True):
-                    pdf_bytes = generate_report(results, baseline_ctr, df_log)
-                    st.download_button("💾 Сохранить PDF", pdf_bytes, f"ope_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf", "application/pdf")
+                txt_bytes = generate_report(results, baseline_ctr, df_log)
+                st.download_button("📄 Скачать TXT-отчёт", txt_bytes, f"ope_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt", "text/plain", use_container_width=True)
     
     else:
         st.title("📊 Offline (OPE) — Загрузка логов")
@@ -493,16 +505,25 @@ else:
                     steps=steps, n_runs=n_runs,
                     progress_callback=progress_callback
                 )
-                overall_progress.progress(1.0, text="Готово! ✅")
+                overall_progress.progress(1.0, text="Готово!")
                 progress_text.empty()
                 
                 st.session_state['online_results'] = all_results
                 st.session_state['online_env'] = selected_env
                 st.session_state['online_steps_saved'] = steps
                 st.session_state['online_runs_saved'] = n_runs
-                st.success("✅ Эксперимент завершён!")
-                st.balloons()
-            except BaseException as e:
+                
+                n_success = sum(1 for d in all_results.values() if 'error' not in d)
+                n_failed = sum(1 for d in all_results.values() if 'error' in d)
+                
+                if n_success == 0:
+                    st.error(f"❌ Все {n_failed} алгоритмов завершились с ошибкой.")
+                elif n_failed > 0:
+                    st.warning(f"⚠️ Завершено: {n_success} успешно, {n_failed} с ошибками.")
+                else:
+                    st.success(f"✅ Все {n_success} алгоритмов завершены успешно!")
+                    st.balloons()
+            except (Exception, SystemExit) as e:
                 progress_text.empty()
                 st.error(f"❌ Критическая ошибка при запуске эксперимента: {e}")
     
@@ -514,9 +535,11 @@ else:
         st.header("📊 Результаты онлайн-эксперимента")
         st.caption(f"Среда: {st.session_state.get('online_env', '')} | Шагов: {s} | Запусков: {st.session_state.get('online_runs_saved', '')}")
         
-        for name, data in all_results.items():
-            if 'error' in data:
-                st.error(f"⚠️ **{name}** не смог запуститься: `{data['error']}`")
+        errors = {name: data['error'] for name, data in all_results.items() if 'error' in data}
+        if errors:
+            with st.expander(f"⚠️ {len(errors)} алгоритм(ов) завершились с ошибкой", expanded=False):
+                for name, err in errors.items():
+                    st.code(f"{name}: {err}")
         
         results_df = format_results_table(all_results, s)
         st.subheader("🏆 Leaderboard")

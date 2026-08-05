@@ -54,12 +54,13 @@ class BaseEnvironment(ABC):
         """
         pass
         
-    def step(self, action: int) -> Dict[str, Any]:
+    def step(self, action: int, context: Optional[np.ndarray] = None) -> Dict[str, Any]:
         """
         Takes an action, potentially holds the reward in a buffer,
         and returns available rewards for this step.
         """
-        context = self.get_context()
+        if context is None:
+            context = self.get_context()
         reward, optimal_reward = self._step_raw(action)
         delay = self._sample_delay()
         

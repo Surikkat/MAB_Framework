@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List, Dict, Any
+from collections import deque
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -85,7 +86,7 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
         self.b_0 = b_0
         self.P = P
 
-        self.E = []
+        self.E = deque(maxlen=buffer_size)
 
         self.context_dim = input_dim
 
@@ -210,8 +211,6 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
         return int(a_t)
 
     def _update_buffer(self, context, arm, reward):
-        if len(self.E) == self.buffer_size:
-            self.E.pop(0)
         if not isinstance(context, torch.Tensor):
             context = torch.as_tensor(context, dtype=torch.float32)
         elif context.dtype != torch.float32:
@@ -234,8 +233,11 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
             phi_t = self.dnn.get_phi(context_tensor)
             phi_t_flat = phi_t.squeeze()
 
+            cov_a = self.cov[action]
+            num = torch.mv(cov_a, phi_t_flat)
+            denom = 1.0 + torch.dot(phi_t_flat, num)
+            self.cov[action] = cov_a - torch.outer(num, num) / denom
             self.precision[action] += torch.outer(phi_t_flat, phi_t_flat)
-            self.cov[action] = torch.linalg.inv(self.precision[action])
 
             self.f[action] += phi_t_flat * reward
 
@@ -285,7 +287,7 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
                 if (len(old_features[arm_idx]) > 0 and len(new_features[arm_idx]) > 0 and
                     old_features[arm_idx].shape[0] > 1 and new_features[arm_idx].shape[0] > 1):
 
-                    old_precision = torch.linalg.inv(self.cov[arm_idx])
+                    old_precision = self.precision[arm_idx].clone()
                     new_cov = self.solve_sdp(
                         new_features[arm_idx], old_features[arm_idx], old_precision, self.epsilon
                     )
@@ -299,11 +301,10 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
                     self.precision[arm_idx] = self.precision_prior[arm_idx].clone()
                     self.f[arm_idx] = torch.zeros(self.g)
 
-                    for i in range(len(new_features[arm_idx])):
-                        phi_i = new_features[arm_idx][i]
-                        r_i = rewards_by_arm[arm_idx][i]
-                        self.precision[arm_idx] += torch.outer(phi_i, phi_i)
-                        self.f[arm_idx] += phi_i * r_i
+                    F_mat = new_features[arm_idx]
+                    R_vec = rewards_by_arm[arm_idx]
+                    self.precision[arm_idx] += F_mat.T @ F_mat
+                    self.f[arm_idx] += F_mat.T @ R_vec
 
                     self.cov[arm_idx] = torch.linalg.inv(self.precision[arm_idx])
                     prior_contrib = torch.mv(self.precision_prior[arm_idx], self.mu_prior[:, arm_idx])

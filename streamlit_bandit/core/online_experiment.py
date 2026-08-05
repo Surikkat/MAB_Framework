@@ -195,15 +195,23 @@ def get_available_algorithms_for_online():
             'model_name': 'FGTSLassoModel',
             'model_params': {},
             'category': '⚡ Special',
-        },
-        {
+        }
+    ]
+    
+    try:
+        import vowpalwabbit
+        algorithms.append({
             'name': 'RegCB',
             'algo_name': 'RegCBBandit',
             'params': {},
             'model_name': 'OnlineRidgeRegression',
             'model_params': {'l2_reg': 1.0},
             'category': '⚡ Special',
-        },
+        })
+    except ImportError:
+        pass
+        
+    algorithms.extend([
         {
             'name': 'SGD-TS',
             'algo_name': 'SGDTSBandit',
@@ -252,8 +260,8 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '🧠 Neural',
         },
-    ]
-    return pd.DataFrame(algos)
+    ])
+    return pd.DataFrame(algorithms)
 
 
 def make_algo_factory(algo_row, n_arms, feature_dim):
@@ -358,7 +366,7 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
             result = runner.run()
             all_results[algo_name] = result
             env.reset()
-        except BaseException as e:
+        except (Exception, SystemExit) as e:
             all_results[algo_name] = {"error": str(e)}
     
     return all_results
@@ -371,9 +379,10 @@ def format_results_table(all_results, steps):
         if 'error' in data:
             rows.append({
                 'Алгоритм': name,
-                'Cum. Regret': 'ERROR',
-                'Avg Regret': 'ERROR',
-                'Время (с)': 'ERROR',
+                'Cum. Regret': float('nan'),
+                'Avg Regret': float('nan'),
+                'Время (с)': float('nan'),
+                'Статус': '❌ Ошибка'
             })
         else:
             cum = data.get('cumulative_regret_mean', [0])
@@ -382,12 +391,13 @@ def format_results_table(all_results, steps):
             
             rows.append({
                 'Алгоритм': name,
-                'Cum. Regret': round(cum[-1], 2) if len(cum) > 0 else 'N/A',
-                'Avg Regret': round(avg[-1], 4) if len(avg) > 0 else 'N/A',
-                'Время (с)': round(sum(times), 2) if len(times) > 0 else 'N/A',
+                'Cum. Regret': round(cum[-1], 2) if len(cum) > 0 else float('nan'),
+                'Avg Regret': round(avg[-1], 4) if len(avg) > 0 else float('nan'),
+                'Время (с)': round(sum(times), 2) if len(times) > 0 else float('nan'),
+                'Статус': '✅ Успех'
             })
     
     df = pd.DataFrame(rows)
-    if 'Cum. Regret' in df.columns and df['Cum. Regret'].dtype != object:
-        df = df.sort_values('Cum. Regret')
+    if 'Cum. Regret' in df.columns:
+        df = df.sort_values('Cum. Regret', na_position='last')
     return df

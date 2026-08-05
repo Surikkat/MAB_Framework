@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 from .base import BaseModel
 
 
@@ -10,8 +11,8 @@ class ExactGPModel(BaseModel):
         self.gamma = gamma
         self.sigma_noise = sigma_noise
         self.window_size = window_size
-        self.X_hist = []
-        self.Y_hist = []
+        self.X_hist = deque(maxlen=window_size) if window_size else []
+        self.Y_hist = deque(maxlen=window_size) if window_size else []
 
     def _rbf_kernel(self, X1, X2):
         sq_dist = np.sum(X1**2, axis=1).reshape(-1, 1) + np.sum(X2**2, axis=1) - 2 * (X1 @ X2.T)
@@ -20,9 +21,6 @@ class ExactGPModel(BaseModel):
     def fit(self, x: np.ndarray, y: float):
         self.X_hist.append(x)
         self.Y_hist.append(y)
-        if self.window_size is not None and len(self.X_hist) > self.window_size:
-            self.X_hist.pop(0)
-            self.Y_hist.pop(0)
 
     def predict(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         x_row = x.reshape(1, -1)
@@ -34,9 +32,11 @@ class ExactGPModel(BaseModel):
         K_mat = self._rbf_kernel(X_a, X_a) + self.sigma_noise**2 * np.eye(len(X_a))
         k_star = self._rbf_kernel(X_a, x_row).flatten()
 
-        K_inv = np.linalg.inv(K_mat)
-        mu = k_star @ K_inv @ Y_a
-        cov = 1 - k_star @ K_inv @ k_star
+        L = np.linalg.cholesky(K_mat)
+        alpha = np.linalg.solve(L.T, np.linalg.solve(L, Y_a))
+        mu = k_star @ alpha
+        v = np.linalg.solve(L, k_star)
+        cov = 1 - v @ v
 
         return np.array([mu]), np.array([cov])
 
