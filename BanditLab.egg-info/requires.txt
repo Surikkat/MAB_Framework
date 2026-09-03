@@ -7,6 +7,9 @@ coba>=8.0
 [deep]
 torch>=2.0
 
+[obp]
+obp>=0.5
+
 [optimization]
 cvxpy>=1.0
 

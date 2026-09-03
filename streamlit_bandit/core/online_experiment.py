@@ -164,14 +164,14 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '🧠 Neural',
         },
-        {
-            'name': 'PFN-TS (Adaptive TabICL)',
-            'algo_name': 'PFNTSAlgorithm',
-            'params': {},
-            'model_name': 'TabICLRegressorPPD',
-            'model_params': {},
-            'category': '🧠 Neural',
-        },
+        # {
+        #     'name': 'PFN-TS (Adaptive TabICL)',
+        #     'algo_name': 'PFNTSAlgorithm',
+        #     'params': {},
+        #     'model_name': 'TabICLRegressorPPD',
+        #     'model_params': {},
+        #     'category': '🧠 Neural',
+        # },
         {
             'name': 'FGTS',
             'algo_name': 'FGTSAlgorithm',

@@ -17,6 +17,10 @@ mab_framework/algorithms/contextual/gpts_bandit.py
 mab_framework/algorithms/contextual/regcb_bandit.py
 mab_framework/algorithms/contextual/sgd_ts_bandit.py
 mab_framework/algorithms/delayed/__init__.py
+mab_framework/algorithms/delayed/delayed_ts.py
+mab_framework/algorithms/delayed/joulani_ucb.py
+mab_framework/algorithms/delayed/patient_bandits.py
+mab_framework/algorithms/delayed/vernade_ucb.py
 mab_framework/algorithms/neural/__init__.py
 mab_framework/algorithms/neural/neural_ucb.py
 mab_framework/algorithms/neural/nn_agp_adaptive.py
@@ -24,6 +28,7 @@ mab_framework/algorithms/neural/nn_agp_ucb.py
 mab_framework/algorithms/neural/nn_bandit_limited_memory.py
 mab_framework/algorithms/neural/nn_ts_b.py
 mab_framework/algorithms/neural/nn_ucb.py
+mab_framework/algorithms/neural/pfn_ts.py
 mab_framework/algorithms/stochastic/__init__.py
 mab_framework/algorithms/stochastic/bootstrap_ts_bandit.py
 mab_framework/algorithms/stochastic/epsilon_greedy.py
@@ -37,6 +42,8 @@ mab_framework/data_generators/generate_fgts.py
 mab_framework/environments/__init__.py
 mab_framework/environments/base.py
 mab_framework/environments/dataset_env.py
+mab_framework/environments/log_data_env.py
+mab_framework/environments/open_bandit_env.py
 mab_framework/environments/synthetic_env.py
 mab_framework/experiment/__init__.py
 mab_framework/experiment/api.py
@@ -44,12 +51,15 @@ mab_framework/experiment/cli.py
 mab_framework/experiment/config_models.py
 mab_framework/experiment/logger.py
 mab_framework/experiment/metrics.py
+mab_framework/experiment/ope_evaluator.py
+mab_framework/experiment/ope_pipeline.py
+mab_framework/experiment/ope_runner.py
+mab_framework/experiment/reward_predictor.py
 mab_framework/experiment/runner.py
 mab_framework/models/__init__.py
 mab_framework/models/base.py
 mab_framework/models/bootstrap_model.py
 mab_framework/models/cmab_models.py
-mab_framework/models/decoupled_fgts_model.py
 mab_framework/models/exact_gp_model.py
 mab_framework/models/fgts_lasso_model.py
 mab_framework/models/fgts_model.py
@@ -62,6 +72,7 @@ mab_framework/models/neural_ucb_model.py
 mab_framework/models/nn_agp_model.py
 mab_framework/models/nn_ucb_model.py
 mab_framework/models/sgd_model.py
+mab_framework/models/tabicl_model.py
 mab_framework/package/__init__.py
 mab_framework/package/main.py
 mab_framework/plots/plot_results.py
@@ -71,3 +82,5 @@ mab_framework/scripts/reproduce_nn_agp.py
 mab_framework/scripts/run_experiment.py
 mab_framework/scripts/run_mushrooms.py
 mab_framework/tests/test_framework.py
+mab_framework/tests/test_open_bandit.py
+mab_framework/tests/test_streamlit_algorithms.py

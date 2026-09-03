@@ -37,7 +37,7 @@ from mab_framework.algorithms.neural.nn_bandit_limited_memory import NeuralBandi
 from mab_framework.algorithms.neural.pfn_ts import PFNTSAlgorithm
 
 # ВСЕ МОДЕЛИ
-from mab_framework.models.tabicl_model import TabICLRegressorPPD
+#from mab_framework.models.tabicl_model import TabICLRegressorPPD
 from mab_framework.models.linear_model import OnlineRidgeRegression
 from mab_framework.models.gp_rff_model import GPRFFModel
 from mab_framework.models.nn_agp_model import NNAGPModel
@@ -394,18 +394,18 @@ class BanditCandidatePool:
                 'complexity': '⭐⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NeuralBanditWithLimitedMemory_5, {}, NeuralLinearModel, {'feature_dim': dim})
             },
-            {
-                'name': 'PFN-TS (Adaptive TabICL)',
-                'description': 'Thompson Sampling через Universal Subsampling CLT (PFN TabICL)',
-                'category': '🧠 Neural (Slow)',
-                'complexity': '⭐⭐⭐⭐⭐',
-                'wrapper': BanditCandidateWrapper(
-                    PFNTSAlgorithm,
-                    {'encoding': 'adaptive', 'alpha': 1.0},
-                    TabICLRegressorPPD,
-                    {}
-                )
-            },
+            # {
+            #     'name': 'PFN-TS (Adaptive TabICL)',
+            #     'description': 'Thompson Sampling через Universal Subsampling CLT (PFN TabICL)',
+            #     'category': '🧠 Neural (Slow)',
+            #     'complexity': '⭐⭐⭐⭐⭐',
+            #     'wrapper': BanditCandidateWrapper(
+            #         PFNTSAlgorithm,
+            #         {'encoding': 'adaptive', 'alpha': 1.0},
+            #         TabICLRegressorPPD,
+            #         {}
+            #     )
+            # },
             
             # SPECIAL — 5 алгоритмов
             {
