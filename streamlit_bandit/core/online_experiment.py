@@ -83,37 +83,29 @@ def get_available_environments():
 
 def get_available_algorithms_for_online():
     """Возвращает алгоритмы, готовые для онлайн-запуска"""
-    algos = [
+    algorithms = [
         {
-            'name': 'Epsilon-Greedy (ε=0.1)',
+            'name': 'Epsilon-Greedy',
             'algo_name': 'EpsilonGreedy',
-            'params': {'epsilon': 0.1},
+            'params': {},
             'model_name': 'OnlineRidgeRegression',
-            'model_params': {'l2_reg': 1.0},
+            'model_params': {},
             'category': '🚀 Stochastic',
         },
         {
-            'name': 'Epsilon-Greedy (ε=0.3)',
-            'algo_name': 'EpsilonGreedy',
-            'params': {'epsilon': 0.3},
-            'model_name': 'OnlineRidgeRegression',
-            'model_params': {'l2_reg': 1.0},
-            'category': '🚀 Stochastic',
-        },
-        {
-            'name': 'UCB (α=1.0)',
+            'name': 'UCB',
             'algo_name': 'UCBAlgorithm',
-            'params': {'alpha': 1.0},
+            'params': {},
             'model_name': 'OnlineRidgeRegression',
-            'model_params': {'l2_reg': 1.0},
+            'model_params': {},
             'category': '🚀 Stochastic',
         },
         {
-            'name': 'LinUCB (α=0.5)',
+            'name': 'LinUCB',
             'algo_name': 'LinUCBAlgorithm',
-            'params': {'alpha': 0.5},
+            'params': {},
             'model_name': 'OnlineRidgeRegression',
-            'model_params': {'l2_reg': 1.0},
+            'model_params': {},
             'category': '🚀 Stochastic',
         },
         {
@@ -121,7 +113,7 @@ def get_available_algorithms_for_online():
             'algo_name': 'ThompsonSampling',
             'params': {},
             'model_name': 'OnlineRidgeRegression',
-            'model_params': {'l2_reg': 1.0},
+            'model_params': {},
             'category': '🚀 Stochastic',
         },
         {
@@ -129,13 +121,13 @@ def get_available_algorithms_for_online():
             'algo_name': 'BootstrapTSBandit',
             'params': {},
             'model_name': 'BootstrapEnsembleModel',
-            'model_params': {'n_models': 10, 'lr': 0.01},
+            'model_params': {},
             'category': '🚀 Stochastic',
         },
         {
             'name': 'NonContextual TS',
             'algo_name': 'NonContextualTSBandit',
-            'params': {'prior_mean': 0.0, 'prior_var': 1.0, 'reward_var': 1.0},
+            'params': {},
             'model_name': None,
             'model_params': None,
             'category': '🚀 Stochastic',
@@ -143,23 +135,23 @@ def get_available_algorithms_for_online():
         {
             'name': 'GP-UCB (mult kernel)',
             'algo_name': 'GPUCBKernelFlexibleAlgorithm',
-            'params': {'beta': 2.0, 'sigma_noise': 0.01, 'kernel_type': 'multiplicative'},
+            'params': {},
             'model_name': 'GPRFFModel',
-            'model_params': {'n_features': 100},
+            'model_params': {},
             'category': '🔮 Bayesian',
         },
         {
             'name': 'GP-TS',
             'algo_name': 'GPTSBandit',
-            'params': {'n_features': 100, 'kernel_scale': 1.0, 'lengthscale': 1.0},
+            'params': {},
             'model_name': 'GPRFFModel',
-            'model_params': {'n_features': 100},
+            'model_params': {},
             'category': '🔮 Bayesian',
         },
         {
             'name': 'Neural UCB',
             'algo_name': 'NeuralUCBAlgorithm',
-            'params': {'beta': 2.0},
+            'params': {},
             'model_name': 'NeuralUCBModel',
             'model_params': {},
             'category': '🧠 Neural',
@@ -167,19 +159,19 @@ def get_available_algorithms_for_online():
         {
             'name': 'NN-AGP UCB',
             'algo_name': 'NNAGPUCBAlgorithm',
-            'params': {'beta': 2.0},
+            'params': {},
             'model_name': 'NNAGPModel',
             'model_params': {},
             'category': '🧠 Neural',
         },
-        {
-            'name': 'PFN-TS (Adaptive TabICL)',
-            'algo_name': 'PFNTSAlgorithm',
-            'params': {'encoding': 'adaptive', 'alpha': 1.0},
-            'model_name': 'TabICLRegressorPPD',
-            'model_params': {},
-            'category': '🧠 Neural',
-        },
+        # {
+        #     'name': 'PFN-TS (Adaptive TabICL)',
+        #     'algo_name': 'PFNTSAlgorithm',
+        #     'params': {},
+        #     'model_name': 'TabICLRegressorPPD',
+        #     'model_params': {},
+        #     'category': '🧠 Neural',
+        # },
         {
             'name': 'FGTS',
             'algo_name': 'FGTSAlgorithm',
@@ -195,7 +187,7 @@ def get_available_algorithms_for_online():
             'model_name': 'FGTSLassoModel',
             'model_params': {},
             'category': '⚡ Special',
-        }
+        },
     ]
     
     try:
@@ -205,7 +197,7 @@ def get_available_algorithms_for_online():
             'algo_name': 'RegCBBandit',
             'params': {},
             'model_name': 'OnlineRidgeRegression',
-            'model_params': {'l2_reg': 1.0},
+            'model_params': {},
             'category': '⚡ Special',
         })
     except ImportError:
@@ -231,7 +223,7 @@ def get_available_algorithms_for_online():
         {
             'name': 'NN-AGP Adaptive',
             'algo_name': 'NNAGPUCBAdaptiveAlgorithm',
-            'params': {'beta': 2.0},
+            'params': {},
             'model_name': 'NNAGPModel',
             'model_params': {},
             'category': '🧠 Neural',
@@ -239,7 +231,7 @@ def get_available_algorithms_for_online():
         {
             'name': 'NN-UCB',
             'algo_name': 'NNUCBAlgorithm',
-            'params': {'beta': 2.0},
+            'params': {},
             'model_name': 'NNUCBModel',
             'model_params': {},
             'category': '🧠 Neural',

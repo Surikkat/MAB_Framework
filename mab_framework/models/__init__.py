@@ -16,5 +16,5 @@ from .exact_gp_model import ExactGPModel
 # Added from Batch 4
 from .cmab_models import LinearNormalModel, GLMNormalModel, NeuralNormalModel
 from .sgd_model import SGDModel
-from .tabicl_model import TabICLRegressorPPD
+#from .tabicl_model import TabICLRegressorPPD
 from .bootstrap_model import BootstrapEnsembleModel
