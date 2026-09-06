@@ -19,6 +19,7 @@ from utils.visualisation import (
     plot_method_agreement
 )
 from utils.export import generate_report
+from core.hyperparams import render_hyperparams
 
 st.set_page_config(
     page_title="OPE Platform – A/B без трафика",
@@ -205,6 +206,15 @@ if mode == "📊 Offline (OPE)":
                         )
                         if checked:
                             selected_names.append(algo_name)
+                            # Рендерим гиперпараметры (только для bandit-алгоритмов)
+                            if 'wrapper' in row and hasattr(row.get('wrapper', None), 'algorithm_class'):
+                                wrapper = row['wrapper']
+                                cls_name = wrapper.algorithm_class.__name__
+                                hp = render_hyperparams(cls_name, f"offline_{algo_name}")
+                                if hp['algo_params']:
+                                    wrapper.algorithm_kwargs.update(hp['algo_params'])
+                                if hp['model_params'] and wrapper.model_kwargs is not None:
+                                    wrapper.model_kwargs.update(hp['model_params'])
             
             filtered_candidates = available_candidates[available_candidates['name'].isin(selected_names)]
 
@@ -473,7 +483,17 @@ else:
         with st.expander(f"{cat} ({len(cat_algos)} алгоритмов)", expanded=False):
             for _, row in cat_algos.iterrows():
                 if st.checkbox(f"{row['name']}", key=f"online_algo_{row['name']}"):
-                    selected_algos.append(row)
+                    hp = render_hyperparams(row['algo_name'], f"online_{row['name']}")
+                    row_dict = row.to_dict()
+                    # Мержим пользовательские параметры поверх дефолтных
+                    merged_algo_params = dict(row_dict.get('params') or {})
+                    merged_algo_params.update(hp['algo_params'])
+                    row_dict['params'] = merged_algo_params
+                    if row_dict.get('model_params') is not None:
+                        merged_model_params = dict(row_dict.get('model_params') or {})
+                        merged_model_params.update(hp['model_params'])
+                        row_dict['model_params'] = merged_model_params
+                    selected_algos.append(row_dict)
     
     selected_algos_df = pd.DataFrame(selected_algos) if selected_algos else pd.DataFrame()
     
