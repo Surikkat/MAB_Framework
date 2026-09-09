@@ -41,8 +41,10 @@ class ExactGPModel(BaseModel):
         return np.array([mu]), np.array([cov])
 
     def sample(self, x: np.ndarray) -> np.ndarray:
-        mu, cov = self.predict(x)
         if len(self.X_hist) == 0:
             return np.array([np.inf])
-        f_sample = np.random.normal(mu, np.sqrt(cov))
+        mu, cov = self.predict(x)
+        mu_val = float(mu[0]) if hasattr(mu, '__len__') else float(mu)
+        cov_val = float(cov[0]) if hasattr(cov, '__len__') else float(cov)
+        f_sample = np.random.normal(mu_val, np.sqrt(max(cov_val, 1e-10)))
         return np.array([f_sample])

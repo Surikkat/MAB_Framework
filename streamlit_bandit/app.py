@@ -210,7 +210,13 @@ if mode == "📊 Offline (OPE)":
                             if 'wrapper' in row and hasattr(row.get('wrapper', None), 'algorithm_class'):
                                 wrapper = row['wrapper']
                                 cls_name = wrapper.algorithm_class.__name__
-                                hp = render_hyperparams(cls_name, f"offline_{algo_name}")
+                                hp = render_hyperparams(
+                                    algo_display_name=algo_name,
+                                    algo_class_name=cls_name,
+                                    unique_key=f"offline_{algo_name}",
+                                    preset_algo_params=wrapper.algorithm_kwargs,
+                                    preset_model_params=wrapper.model_kwargs
+                                )
                                 if hp['algo_params']:
                                     wrapper.algorithm_kwargs.update(hp['algo_params'])
                                 if hp['model_params'] and wrapper.model_kwargs is not None:
@@ -483,7 +489,13 @@ else:
         with st.expander(f"{cat} ({len(cat_algos)} алгоритмов)", expanded=False):
             for _, row in cat_algos.iterrows():
                 if st.checkbox(f"{row['name']}", key=f"online_algo_{row['name']}"):
-                    hp = render_hyperparams(row['algo_name'], f"online_{row['name']}")
+                    hp = render_hyperparams(
+                        algo_display_name=row['name'],
+                        algo_class_name=row['algo_name'],
+                        unique_key=f"online_{row['name']}",
+                        preset_algo_params=row.get('params', {}),
+                        preset_model_params=row.get('model_params', {})
+                    )
                     row_dict = row.to_dict()
                     # Мержим пользовательские параметры поверх дефолтных
                     merged_algo_params = dict(row_dict.get('params') or {})

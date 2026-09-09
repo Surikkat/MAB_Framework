@@ -10,9 +10,9 @@ from pydantic import ValidationError
 
 from .config_models import ExperimentConfig
 from .runner import ExperimentRunner
-import environments
-import models
-import algorithms
+from .. import environments
+from .. import models
+from .. import algorithms
 
 class Experiment:
     def __init__(self, config_dict: dict):

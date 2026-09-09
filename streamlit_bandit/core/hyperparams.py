@@ -191,21 +191,56 @@ ALGO_HYPERPARAMS = {
              'default': 1.0, 'min': 0.01, 'step': 0.1},
         ],
     },
+    # ═══════════════════════════════════════════
+    # Special Mappings by Display Name
+    # ═══════════════════════════════════════════
+    'Exact GP': {
+        'algo_params': [],
+        'model_params': [
+            {'key': 'gamma', 'label': 'γ (RBF scale)', 'type': 'number', 'default': 1.0, 'step': 0.1, 'min': 0.01},
+            {'key': 'sigma_noise', 'label': 'σ_noise', 'type': 'number', 'default': 0.1, 'step': 0.01, 'min': 0.001, 'format': '%.4f'},
+        ],
+    },
+    'Kernel UCB': {
+        'algo_params': [
+            {'key': 'alpha', 'label': 'α (exploration coef)', 'type': 'number', 'default': 1.0, 'step': 0.1, 'min': 0.01},
+        ],
+        'model_params': [
+            {'key': 'gamma', 'label': 'γ (RBF scale)', 'type': 'number', 'default': 1.0, 'step': 0.1, 'min': 0.01},
+            {'key': 'lam', 'label': 'λ (regularization)', 'type': 'number', 'default': 1.0, 'step': 0.1, 'min': 0.01},
+        ],
+    },
+    'Linear Normal (CMAB)': {
+        'algo_params': [],
+        'model_params': [
+            {'key': 'prior_var', 'label': 'Prior variance', 'type': 'number', 'default': 1.0, 'step': 0.1, 'min': 0.01},
+            {'key': 'reward_var', 'label': 'Reward variance', 'type': 'number', 'default': 1.0, 'step': 0.1, 'min': 0.01},
+        ],
+    },
 }
 
 
-def render_hyperparams(algo_name: str, unique_key: str) -> dict:
+def render_hyperparams(
+    algo_display_name: str,
+    algo_class_name: str,
+    unique_key: str,
+    preset_algo_params: dict = None,
+    preset_model_params: dict = None
+) -> dict:
     """
     Рендерит Streamlit-виджеты для гиперпараметров алгоритма.
     
     Args:
-        algo_name: Имя класса алгоритма (например, 'EpsilonGreedy')
-        unique_key: Уникальный ключ для Streamlit виджетов (чтобы не было коллизий)
-    
-    Returns:
-        {'algo_params': {key: value, ...}, 'model_params': {key: value, ...}}
+        algo_display_name: Отображаемое имя (например 'Exact GP')
+        algo_class_name: Имя класса алгоритма (например 'ThompsonSampling')
+        unique_key: Уникальный ключ для Streamlit виджетов
+        preset_algo_params: Дефолтные параметры алгоритма из конфига
+        preset_model_params: Дефолтные параметры модели из конфига
     """
-    spec = ALGO_HYPERPARAMS.get(algo_name)
+    preset_algo_params = preset_algo_params or {}
+    preset_model_params = preset_model_params or {}
+    
+    spec = ALGO_HYPERPARAMS.get(algo_display_name) or ALGO_HYPERPARAMS.get(algo_class_name)
     if not spec:
         return {'algo_params': {}, 'model_params': {}}
 
@@ -216,19 +251,23 @@ def render_hyperparams(algo_name: str, unique_key: str) -> dict:
     algo_result = {}
     model_result = {}
 
-    # Определяем количество колонок (макс 3)
     n_cols = min(len(all_params), 3)
     cols = st.columns(n_cols)
 
     for i, param in enumerate(all_params):
         col = cols[i % n_cols]
         widget_key = f"hp_{unique_key}_{param['key']}"
+        
+        is_model_param = param in spec.get('model_params', [])
+        
+        preset_val = preset_model_params.get(param['key']) if is_model_param else preset_algo_params.get(param['key'])
+        default_val = preset_val if preset_val is not None else param['default']
 
         with col:
             if param['type'] == 'number':
                 value = st.number_input(
                     param['label'],
-                    value=param['default'],
+                    value=float(default_val) if isinstance(default_val, (int, float)) else param['default'],
                     min_value=param.get('min', None),
                     step=param.get('step', 0.1),
                     format=param.get('format', '%.2f'),
@@ -236,7 +275,7 @@ def render_hyperparams(algo_name: str, unique_key: str) -> dict:
                 )
             elif param['type'] == 'selectbox':
                 options = param['options']
-                default_idx = options.index(param['default']) if param['default'] in options else 0
+                default_idx = options.index(default_val) if default_val in options else 0
                 value = st.selectbox(
                     param['label'],
                     options=options,
@@ -244,10 +283,8 @@ def render_hyperparams(algo_name: str, unique_key: str) -> dict:
                     key=widget_key,
                 )
             else:
-                value = param['default']
+                value = default_val
 
-        # Распределяем по algo_params / model_params
-        is_model_param = param in spec.get('model_params', [])
         if is_model_param:
             model_result[param['key']] = value
         else:

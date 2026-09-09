@@ -102,8 +102,6 @@ class BanditCandidateWrapper:
             model_kwargs['d'] = actual_model_dim
         if 'input_dim' in m_init_params:
             model_kwargs['input_dim'] = actual_model_dim
-        if 'n_features' in m_init_params:
-            model_kwargs['n_features'] = actual_model_dim
 
         if self.algorithm_class.__name__ in single_model_algos:
             models_arg = self.model_class(**model_kwargs)
@@ -123,8 +121,6 @@ class BanditCandidateWrapper:
             algo_kwargs['d'] = actual_context_dim
         if 'context_dim' in init_params:
             algo_kwargs['context_dim'] = actual_context_dim
-        if 'n_features' in init_params:
-            algo_kwargs['n_features'] = actual_context_dim
         if 'input_dim' in init_params:
             algo_kwargs['input_dim'] = actual_context_dim
         
@@ -333,7 +329,7 @@ class BanditCandidatePool:
                 'category': '🔮 Bayesian (GP)',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(
-                    GPTSBandit, {'d': dim, 'n_features': 100},
+                    ThompsonSampling, {},
                     ExactGPModel, {'feature_dim': dim}
                 )
             },

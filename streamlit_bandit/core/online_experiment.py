@@ -141,10 +141,34 @@ def get_available_algorithms_for_online():
             'category': '🔮 Bayesian',
         },
         {
+            'name': 'GP-UCB Kernel (adapt)',
+            'algo_name': 'GPUCBKernelFlexibleAlgorithm',
+            'params': {'kernel_type': 'adaptive'},
+            'model_name': 'GPRFFModel',
+            'model_params': {},
+            'category': '🔮 Bayesian',
+        },
+        {
             'name': 'GP-TS',
             'algo_name': 'GPTSBandit',
             'params': {},
             'model_name': 'GPRFFModel',
+            'model_params': {},
+            'category': '🔮 Bayesian',
+        },
+        {
+            'name': 'Exact GP',
+            'algo_name': 'ThompsonSampling',
+            'params': {},
+            'model_name': 'ExactGPModel',
+            'model_params': {},
+            'category': '🔮 Bayesian',
+        },
+        {
+            'name': 'Kernel UCB',
+            'algo_name': 'UCBAlgorithm',
+            'params': {},
+            'model_name': 'KernelUCBModel',
             'model_params': {},
             'category': '🔮 Bayesian',
         },
@@ -252,6 +276,14 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '🧠 Neural',
         },
+        {
+            'name': 'Linear Normal (CMAB)',
+            'algo_name': 'ThompsonSampling',
+            'params': {},
+            'model_name': 'LinearNormalModel',
+            'model_params': {},
+            'category': '⚡ Special',
+        },
     ])
     return pd.DataFrame(algorithms)
 
@@ -265,7 +297,7 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
         model = None
         if algo_row['model_name']:
             ModelClass = getattr(models, algo_row['model_name'])
-            m_params = dict(algo_row['model_params'])
+            m_params = dict(algo_row.get('model_params') or {})
             m_init_params = ModelClass.__init__.__code__.co_varnames
             
             model_feature_dim = (n_arms * feature_dim) if algo_row['algo_name'] == 'SGDTSBandit' else feature_dim
@@ -275,8 +307,6 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
                 m_params['d'] = model_feature_dim
             elif 'input_dim' in m_init_params:
                 m_params['input_dim'] = model_feature_dim
-            elif 'n_features' in m_init_params:
-                m_params['n_features'] = model_feature_dim
                 
             single_model_algos = {
                 'PFNTSAlgorithm',
@@ -301,8 +331,6 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
             a_params['theta_dim'] = feature_dim
         if 'd' in init_params:
             a_params['d'] = feature_dim
-        if 'n_features' in init_params:
-            a_params['n_features'] = feature_dim
         if 'context_dim' in init_params:
             a_params['context_dim'] = feature_dim
         if 'input_dim' in init_params:
