@@ -367,7 +367,7 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
     all_results = {}
     
     for _, algo_row in selected_algos.iterrows():
-        algo_name = algo_row['name']
+        algo_name = algo_row.get('display_name', algo_row['name'])
         
         if progress_callback:
             progress_callback(f"Запуск: {algo_name}...")

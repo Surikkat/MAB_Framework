@@ -19,7 +19,7 @@ from utils.visualisation import (
     plot_method_agreement
 )
 from utils.export import generate_report
-from core.hyperparams import render_hyperparams
+from core.hyperparams import render_hyperparams, reset_hyperparams
 
 st.set_page_config(
     page_title="OPE Platform – A/B без трафика",
@@ -31,6 +31,10 @@ if 'benchmark_results' not in st.session_state:
     st.session_state['benchmark_results'] = None
 if 'online_results' not in st.session_state:
     st.session_state['online_results'] = None
+if 'offline_experiment_list' not in st.session_state:
+    st.session_state['offline_experiment_list'] = []
+if 'online_experiment_list' not in st.session_state:
+    st.session_state['online_experiment_list'] = []
 
 
 with st.sidebar:
@@ -169,44 +173,47 @@ if mode == "📊 Offline (OPE)":
             filtered_candidates = available_candidates[
                 available_candidates['category'].isin([cat for cat, sel in selected_groups.items() if sel])
             ]
+            if len(filtered_candidates) > 0:
+                if st.button(f"➕ Добавить {len(filtered_candidates)} алгоритмов выбранных категорий", key="offline_add_cats_btn", use_container_width=True):
+                    for _, row in filtered_candidates.iterrows():
+                        algo_name = row['name']
+                        st.session_state['offline_experiment_list'].append({
+                            'name': algo_name,
+                            'algo_params': {},
+                            'model_params': {},
+                            'category': row['category'],
+                            'complexity': row.get('complexity', '⭐')
+                        })
+                    st.rerun()
             
         else:
             st.subheader("Выберите конкретные алгоритмы:")
-            
-            selected_names = []
             
             for cat in categories:
                 cat_candidates = available_candidates[available_candidates['category'] == cat]
                 
                 with st.expander(f"{cat} ({len(cat_candidates)} алгоритмов)", expanded=False):
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        if st.button("✅ Все", key=f"offline_all_{cat}"):
+                    c_add_all, _ = st.columns([0.4, 0.6])
+                    with c_add_all:
+                        if st.button("➕ Добавить все в категории", key=f"offline_add_all_{cat}"):
                             for _, row in cat_candidates.iterrows():
-                                st.session_state[f"offline_algo_{row['name']}"] = True
-                            st.rerun()
-                    with c2:
-                        if st.button("❌ Снять", key=f"offline_none_{cat}"):
-                            for _, row in cat_candidates.iterrows():
-                                st.session_state[f"offline_algo_{row['name']}"] = False
+                                st.session_state['offline_experiment_list'].append({
+                                    'name': row['name'],
+                                    'algo_params': {},
+                                    'model_params': {},
+                                    'category': cat,
+                                    'complexity': row.get('complexity', '⭐')
+                                })
                             st.rerun()
                     
                     for _, row in cat_candidates.iterrows():
                         algo_name = row['name']
-                        key = f"offline_algo_{algo_name}"
-                        
-                        if key not in st.session_state:
-                            st.session_state[key] = False
-                        
-                        checked = st.checkbox(
-                            f"{row['complexity']} {algo_name}",
-                            value=st.session_state[key],
-                            key=key,
-                            help=row['description']
-                        )
-                        if checked:
-                            selected_names.append(algo_name)
-                            # Рендерим гиперпараметры (только для bandit-алгоритмов)
+                        with st.container(border=True):
+                            c_title, c_btn = st.columns([0.88, 0.12])
+                            with c_title:
+                                st.markdown(f"**{row['complexity']} {algo_name}** — *{row['description']}*")
+                            
+                            hp = {'algo_params': {}, 'model_params': {}}
                             if 'wrapper' in row and hasattr(row.get('wrapper', None), 'algorithm_class'):
                                 wrapper = row['wrapper']
                                 cls_name = wrapper.algorithm_class.__name__
@@ -217,20 +224,46 @@ if mode == "📊 Offline (OPE)":
                                     preset_algo_params=wrapper.algorithm_kwargs,
                                     preset_model_params=wrapper.model_kwargs
                                 )
-                                if hp['algo_params']:
-                                    wrapper.algorithm_kwargs.update(hp['algo_params'])
-                                if hp['model_params'] and wrapper.model_kwargs is not None:
-                                    wrapper.model_kwargs.update(hp['model_params'])
-            
-            filtered_candidates = available_candidates[available_candidates['name'].isin(selected_names)]
+                            with c_btn:
+                                if st.button("➕", key=f"add_offline_{algo_name}", help=f"Добавить {algo_name} в эксперимент"):
+                                    st.session_state['offline_experiment_list'].append({
+                                        'name': algo_name,
+                                        'algo_params': dict(hp['algo_params']),
+                                        'model_params': dict(hp['model_params']),
+                                        'category': cat,
+                                        'complexity': row.get('complexity', '⭐')
+                                    })
+                                    reset_hyperparams(f"offline_{algo_name}")
+                                    st.rerun()
 
-        if len(filtered_candidates) > 0:
-            st.info(f"🎯 Выбрано алгоритмов: **{len(filtered_candidates)}** из {len(available_candidates)}")
-            with st.expander("📋 Список выбранных"):
-                for _, row in filtered_candidates.iterrows():
-                    st.markdown(f"- {row['complexity']} **{row['name']}** — {row['description']}")
-        else:
-            st.warning("👆 Выберите хотя бы один алгоритм для запуска бенчмарка")
+        st.divider()
+        c_hdr, c_clr = st.columns([0.8, 0.2])
+        with c_hdr:
+            st.subheader(f"📋 Выбранные алгоритмы в эксперименте ({len(st.session_state['offline_experiment_list'])})")
+        with c_clr:
+            if len(st.session_state['offline_experiment_list']) > 0:
+                if st.button("🗑️ Очистить список", key="clear_offline_exp"):
+                    st.session_state['offline_experiment_list'] = []
+                    st.rerun()
+
+        for i, item in enumerate(st.session_state['offline_experiment_list']):
+            with st.container(border=True):
+                col1, col2 = st.columns([0.92, 0.08])
+                with col1:
+                    params_str = []
+                    if item.get('algo_params'):
+                        params_str.extend([f"{k}={v}" for k, v in item['algo_params'].items()])
+                    if item.get('model_params'):
+                        params_str.extend([f"{k}={v}" for k, v in item['model_params'].items()])
+                    p_info = f" `[{', '.join(params_str)}]`" if params_str else " *(дефолтные параметры)*"
+                    st.markdown(f"**#{i+1} {item['complexity']} {item['name']}**{p_info} — `{item['category']}`")
+                with col2:
+                    if st.button("❌", key=f"remove_offline_{i}", help="Удалить из эксперимента"):
+                        st.session_state['offline_experiment_list'].pop(i)
+                        st.rerun()
+
+        if len(st.session_state['offline_experiment_list']) == 0:
+            st.warning("👆 Добавьте хотя бы один алгоритм для запуска бенчмарка")
 
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
@@ -238,12 +271,12 @@ if mode == "📊 Offline (OPE)":
                 "🚀 ЗАПУСТИТЬ БЕНЧМАРК", 
                 type="primary", 
                 use_container_width=True,
-                disabled=(len(filtered_candidates) == 0),
+                disabled=(len(st.session_state['offline_experiment_list']) == 0),
                 key="offline_run_btn"
             )
 
-        if run_benchmark and len(filtered_candidates) > 0:
-            with st.spinner(f"Оцениваем {len(filtered_candidates)} алгоритмов..."):
+        if run_benchmark and len(st.session_state['offline_experiment_list']) > 0:
+            with st.spinner(f"Оцениваем {len(st.session_state['offline_experiment_list'])} алгоритмов..."):
                 
                 evaluator = OPEEvaluator(
                     df_log,
@@ -257,21 +290,27 @@ if mode == "📊 Offline (OPE)":
                 algo_progress = st.progress(0, text="Подготовка...")
                 status_text = st.empty()
                 
-                total = len(filtered_candidates)
-                candidates_list = list(filtered_candidates.iterrows())
+                total = len(st.session_state['offline_experiment_list'])
                 
-                for i, (_, candidate) in enumerate(candidates_list):
+                for i, candidate in enumerate(st.session_state['offline_experiment_list']):
                     algo_name = candidate['name']
+                    # Формируем уникальное имя для результатов
+                    unique_name = f"{algo_name} #{i+1}"
+
                     status_text.markdown(f"**Оценка {i+1}/{total}:** {algo_name}")
                     overall_progress.progress(i / total, text=f"Общий прогресс: {i}/{total}")
                     algo_progress.progress(0.0, text=f"{algo_name}: загрузка...")
                     
                     try:
-                        algo_progress.progress(0.33, text=f"{algo_name}: propensity...")
-                        candidate_fn = pool.get_candidate(algo_name)
-                        algo_progress.progress(0.66, text=f"{algo_name}: DM/IPS/DR...")
-                        result = evaluator.evaluate(algo_name, candidate_fn)
-                        algo_progress.progress(1.0, text=f"{algo_name}: готово")
+                        algo_progress.progress(0.33, text=f"{unique_name}: propensity...")
+                        candidate_fn = pool.get_candidate(
+                            algo_name, 
+                            custom_algo_params=candidate.get('algo_params'),
+                            custom_model_params=candidate.get('model_params')
+                        )
+                        algo_progress.progress(0.66, text=f"{unique_name}: DM/IPS/DR...")
+                        result = evaluator.evaluate(unique_name, candidate_fn)
+                        algo_progress.progress(1.0, text=f"{unique_name}: готово")
                         result['category'] = candidate['category']
                         result['complexity'] = candidate['complexity']
                         results.append(result)
@@ -480,15 +519,26 @@ else:
     st.subheader("2️⃣ Выберите алгоритмы")
     algos_df = get_available_algorithms_for_online()
     
-    selected_algos = []
     online_categories = algos_df['category'].unique()
     
-    # Считаем выбранные
     for cat in online_categories:
         cat_algos = algos_df[algos_df['category'] == cat]
         with st.expander(f"{cat} ({len(cat_algos)} алгоритмов)", expanded=False):
+            c_add_all, _ = st.columns([0.4, 0.6])
+            with c_add_all:
+                if st.button("➕ Добавить все в категории", key=f"online_add_all_{cat}"):
+                    for _, row in cat_algos.iterrows():
+                        row_dict = row.to_dict()
+                        idx = len(st.session_state['online_experiment_list']) + 1
+                        row_dict['display_name'] = f"{row['name']} #{idx}"
+                        st.session_state['online_experiment_list'].append(row_dict)
+                    st.rerun()
+
             for _, row in cat_algos.iterrows():
-                if st.checkbox(f"{row['name']}", key=f"online_algo_{row['name']}"):
+                with st.container(border=True):
+                    c_title, c_btn = st.columns([0.88, 0.12])
+                    with c_title:
+                        st.markdown(f"**{row['name']}**")
                     hp = render_hyperparams(
                         algo_display_name=row['name'],
                         algo_class_name=row['algo_name'],
@@ -496,18 +546,49 @@ else:
                         preset_algo_params=row.get('params', {}),
                         preset_model_params=row.get('model_params', {})
                     )
-                    row_dict = row.to_dict()
-                    # Мержим пользовательские параметры поверх дефолтных
-                    merged_algo_params = dict(row_dict.get('params') or {})
-                    merged_algo_params.update(hp['algo_params'])
-                    row_dict['params'] = merged_algo_params
-                    if row_dict.get('model_params') is not None:
-                        merged_model_params = dict(row_dict.get('model_params') or {})
-                        merged_model_params.update(hp['model_params'])
-                        row_dict['model_params'] = merged_model_params
-                    selected_algos.append(row_dict)
-    
-    selected_algos_df = pd.DataFrame(selected_algos) if selected_algos else pd.DataFrame()
+                    with c_btn:
+                        if st.button("➕", key=f"add_online_{row['name']}", help=f"Добавить {row['name']} в эксперимент"):
+                            row_dict = row.to_dict()
+                            merged_algo_params = dict(row_dict.get('params') or {})
+                            merged_algo_params.update(hp['algo_params'])
+                            row_dict['params'] = merged_algo_params
+                            if row_dict.get('model_params') is not None:
+                                merged_model_params = dict(row_dict.get('model_params') or {})
+                                merged_model_params.update(hp['model_params'])
+                                row_dict['model_params'] = merged_model_params
+                            idx = len(st.session_state['online_experiment_list']) + 1
+                            row_dict['display_name'] = f"{row['name']} #{idx}"
+                            st.session_state['online_experiment_list'].append(row_dict)
+                            reset_hyperparams(f"online_{row['name']}")
+                            st.rerun()
+
+    st.divider()
+    c_hdr, c_clr = st.columns([0.8, 0.2])
+    with c_hdr:
+        st.subheader(f"📋 Выбранные алгоритмы в эксперименте ({len(st.session_state['online_experiment_list'])})")
+    with c_clr:
+        if len(st.session_state['online_experiment_list']) > 0:
+            if st.button("🗑️ Очистить список", key="clear_online_exp"):
+                st.session_state['online_experiment_list'] = []
+                st.rerun()
+
+    for i, item in enumerate(st.session_state['online_experiment_list']):
+        with st.container(border=True):
+            col1, col2 = st.columns([0.92, 0.08])
+            with col1:
+                params_str = []
+                if item.get('params'):
+                    params_str.extend([f"{k}={v}" for k, v in item['params'].items()])
+                if item.get('model_params'):
+                    params_str.extend([f"{k}={v}" for k, v in item['model_params'].items()])
+                p_info = f" `[{', '.join(params_str)}]`" if params_str else " *(дефолтные параметры)*"
+                st.markdown(f"**#{i+1} {item['display_name']}**{p_info} — `{item.get('category', '')}`")
+            with col2:
+                if st.button("❌", key=f"remove_online_{i}", help="Удалить из эксперимента"):
+                    st.session_state['online_experiment_list'].pop(i)
+                    st.rerun()
+                
+    selected_algos_df = pd.DataFrame(st.session_state['online_experiment_list']) if st.session_state['online_experiment_list'] else pd.DataFrame()
     
     st.subheader("3️⃣ Параметры эксперимента")
     c1, c2 = st.columns(2)
@@ -518,10 +599,10 @@ else:
     
     # Запуск
     st.subheader("4️⃣ Запуск")
-    st.info(f"Выбрано алгоритмов: **{len(selected_algos)}** | Шагов: {steps} | Запусков: {n_runs}")
+    st.info(f"Выбрано алгоритмов: **{len(st.session_state['online_experiment_list'])}** | Шагов: {steps} | Запусков: {n_runs}")
     
     if st.button("🚀 ЗАПУСТИТЬ ОНЛАЙН-ЭКСПЕРИМЕНТ", type="primary", use_container_width=True,
-                 disabled=(len(selected_algos) == 0), key="online_run_btn"):
+                 disabled=(len(st.session_state['online_experiment_list']) == 0), key="online_run_btn"):
         
         with st.spinner(f"Запускаем эксперимент на {steps} шагов x {n_runs} запусков..."):
             progress_text = st.empty()

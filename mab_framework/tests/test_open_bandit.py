@@ -9,8 +9,8 @@ obp = pytest.importorskip("obp")
 
 from mab_framework.environments.open_bandit_env import OpenBanditEnvironment
 from mab_framework.models.linear_model import OnlineRidgeRegression
-from mab_framework.algorithms.stochastic.ucb import UCBAlgorithm
-from mab_framework.algorithms.stochastic.thompson_sampling import ThompsonSampling
+from mab_framework.algorithms.non_contextual.ucb import UCBAlgorithm
+from mab_framework.algorithms.non_contextual.thompson_sampling import ThompsonSampling
 from mab_framework.experiment.runner import ExperimentRunner
 
 

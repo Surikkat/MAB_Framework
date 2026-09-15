@@ -68,7 +68,7 @@ class CandidatePool:
         
         return all_candidates
     
-    def get_candidate(self, name):
+    def get_candidate(self, name, custom_algo_params=None, custom_model_params=None):
         rule_map = {
             'Popular': self._candidate_popular,
             'Category Personalization': self._candidate_category,
@@ -85,8 +85,26 @@ class CandidatePool:
         bandit_row = bandit_candidates[bandit_candidates['name'] == name]
         
         if len(bandit_row) > 0:
+            wrapper = bandit_row.iloc[0]['wrapper']
+            
+            if custom_algo_params or custom_model_params:
+                from core.bandit_candidates import BanditCandidateWrapper
+                algo_kwargs = dict(wrapper.algorithm_kwargs or {})
+                if custom_algo_params:
+                    algo_kwargs.update(custom_algo_params)
+                model_kwargs = dict(wrapper.model_kwargs or {})
+                if custom_model_params:
+                    model_kwargs.update(custom_model_params)
+                
+                custom_wrapper = BanditCandidateWrapper(
+                    algorithm_class=wrapper.algorithm_class,
+                    algorithm_kwargs=algo_kwargs,
+                    model_class=wrapper.model_class,
+                    model_kwargs=model_kwargs
+                )
+                return custom_wrapper.create_offline_propensity_fn(self.df)
+
             if name not in self._bandit_cache:
-                wrapper = bandit_row.iloc[0]['wrapper']
                 self._bandit_cache[name] = wrapper.create_offline_propensity_fn(self.df)
             
             return self._bandit_cache[name]

@@ -12,20 +12,20 @@ if _root_dir not in sys.path:
 
 
 # Stochastic
-from mab_framework.algorithms.stochastic.epsilon_greedy import EpsilonGreedy
-from mab_framework.algorithms.stochastic.ucb import UCBAlgorithm
-from mab_framework.algorithms.stochastic.thompson_sampling import ThompsonSampling
-from mab_framework.algorithms.stochastic.linucb import LinUCBAlgorithm
-from mab_framework.algorithms.stochastic.noncontextual_ts_bandit import NonContextualTSBandit
-from mab_framework.algorithms.stochastic.bootstrap_ts_bandit import BootstrapTSBandit
-from mab_framework.algorithms.stochastic.fgts import FGTSAlgorithm
+from mab_framework.algorithms.non_contextual.epsilon_greedy import EpsilonGreedy
+from mab_framework.algorithms.non_contextual.ucb import UCBAlgorithm
+from mab_framework.algorithms.non_contextual.thompson_sampling import ThompsonSampling
+from mab_framework.algorithms.linear.linucb import LinUCBAlgorithm
+from mab_framework.algorithms.non_contextual.noncontextual_ts_bandit import NonContextualTSBandit
+from mab_framework.algorithms.non_contextual.bootstrap_ts_bandit import BootstrapTSBandit
+from mab_framework.algorithms.non_contextual.fgts import FGTSAlgorithm
 
 # Contextual
-from mab_framework.algorithms.contextual.gp_ucb_multikernel import GPUCBKernelFlexibleAlgorithm
-from mab_framework.algorithms.contextual.gpts_bandit import GPTSBandit
-from mab_framework.algorithms.contextual.custom_ts_bandit import CustomTSBandit
-from mab_framework.algorithms.contextual.sgd_ts_bandit import SGDTSBandit
-from mab_framework.algorithms.contextual.regcb_bandit import RegCBBandit
+from mab_framework.algorithms.gaussian_process.gp_ucb_multikernel import GPUCBKernelFlexibleAlgorithm
+from mab_framework.algorithms.gaussian_process.gpts_bandit import GPTSBandit
+from mab_framework.algorithms.linear.custom_ts_bandit import CustomTSBandit
+from mab_framework.algorithms.linear.sgd_ts_bandit import SGDTSBandit
+from mab_framework.algorithms.glm.regcb_bandit import RegCBBandit
 
 # Neural
 from mab_framework.algorithms.neural.nn_agp_ucb import NNAGPUCBAlgorithm
@@ -45,7 +45,7 @@ from mab_framework.models.neural_network import NeuralLinearModel
 from mab_framework.models.neural_ucb_model import NeuralUCBModel
 from mab_framework.models.nn_ucb_model import NNUCBModel
 from mab_framework.models.glm_laplace_model import GLMLaplaceModel
-from mab_framework.algorithms.stochastic.bootstrap_ts_bandit import BootstrapEnsembleModel
+from mab_framework.algorithms.non_contextual.bootstrap_ts_bandit import BootstrapEnsembleModel
 from mab_framework.models.cmab_models import LinearNormalModel, GLMNormalModel, NeuralNormalModel
 from mab_framework.models.exact_gp_model import ExactGPModel
 from mab_framework.models.fgts_model import FGTSModel

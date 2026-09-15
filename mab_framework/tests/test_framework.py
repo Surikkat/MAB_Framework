@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from mab_framework.environments.base import DelayedFeedbackBuffer
 from mab_framework.environments.dataset_env import NPZDatasetEnv
 from mab_framework.models.linear_model import OnlineRidgeRegression
-from mab_framework.algorithms.stochastic.ucb import UCBAlgorithm
+from mab_framework.algorithms.non_contextual.ucb import UCBAlgorithm
 from mab_framework.experiment.runner import ExperimentRunner
 from mab_framework.experiment.config_models import ExperimentConfig
 

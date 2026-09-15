@@ -220,6 +220,12 @@ ALGO_HYPERPARAMS = {
 }
 
 
+def reset_hyperparams(unique_key: str):
+    """Сбрасывает виджеты гиперпараметров для данного unique_key к значениям по умолчанию."""
+    old_ver = st.session_state.get(f"hp_ver_{unique_key}", 0)
+    st.session_state[f"hp_ver_{unique_key}"] = old_ver + 1
+
+
 def render_hyperparams(
     algo_display_name: str,
     algo_class_name: str,
@@ -254,9 +260,10 @@ def render_hyperparams(
     n_cols = min(len(all_params), 3)
     cols = st.columns(n_cols)
 
+    version = st.session_state.get(f"hp_ver_{unique_key}", 0)
     for i, param in enumerate(all_params):
         col = cols[i % n_cols]
-        widget_key = f"hp_{unique_key}_{param['key']}"
+        widget_key = f"hp_{unique_key}_v{version}_{param['key']}"
         
         is_model_param = param in spec.get('model_params', [])
         
@@ -265,14 +272,37 @@ def render_hyperparams(
 
         with col:
             if param['type'] == 'number':
-                value = st.number_input(
-                    param['label'],
-                    value=float(default_val) if isinstance(default_val, (int, float)) else param['default'],
-                    min_value=param.get('min', None),
-                    step=param.get('step', 0.1),
-                    format=param.get('format', '%.2f'),
-                    key=widget_key,
+                is_int = (
+                    isinstance(default_val, int) and not isinstance(default_val, bool)
+                    and isinstance(param.get('step', 1), int)
+                    and isinstance(param.get('min', 0), (int, type(None)))
+                    and isinstance(param.get('max', 0), (int, type(None)))
                 )
+                if is_int:
+                    val = int(default_val)
+                    min_v = int(param['min']) if param.get('min') is not None else None
+                    max_v = int(param['max']) if param.get('max') is not None else None
+                    step_v = int(param.get('step', 1))
+                    fmt = param.get('format', '%d')
+                else:
+                    val = float(default_val) if isinstance(default_val, (int, float)) else float(param['default'])
+                    min_v = float(param['min']) if param.get('min') is not None else None
+                    max_v = float(param['max']) if param.get('max') is not None else None
+                    step_v = float(param.get('step', 0.1))
+                    fmt = param.get('format', '%.2f')
+
+                kwargs = {
+                    'value': val,
+                    'step': step_v,
+                    'format': fmt,
+                    'key': widget_key,
+                }
+                if min_v is not None:
+                    kwargs['min_value'] = min_v
+                if max_v is not None:
+                    kwargs['max_value'] = max_v
+
+                value = st.number_input(param['label'], **kwargs)
             elif param['type'] == 'selectbox':
                 options = param['options']
                 default_idx = options.index(default_val) if default_val in options else 0
