@@ -37,7 +37,7 @@ from mab_framework.algorithms.neural.nn_bandit_limited_memory import NeuralBandi
 from mab_framework.algorithms.neural.pfn_ts import PFNTSAlgorithm
 
 # ВСЕ МОДЕЛИ
-#from mab_framework.models.tabicl_model import TabICLRegressorPPD
+from mab_framework.models.tabicl_model import TabICLRegressorPPD
 from mab_framework.models.linear_model import OnlineRidgeRegression
 from mab_framework.models.gp_rff_model import GPRFFModel
 from mab_framework.models.nn_agp_model import NNAGPModel
@@ -123,6 +123,8 @@ class BanditCandidateWrapper:
             algo_kwargs['context_dim'] = actual_context_dim
         if 'input_dim' in init_params:
             algo_kwargs['input_dim'] = actual_context_dim
+        if 'n_features' in init_params:
+            algo_kwargs['n_features'] = actual_context_dim
         
         algorithm = self.algorithm_class(**algo_kwargs)
 
@@ -223,70 +225,70 @@ class BanditCandidatePool:
             {
                 'name': 'Epsilon-Greedy (ε=0.01)',
                 'description': '1% exploration — almost pure greedy',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐',
                 'wrapper': BanditCandidateWrapper(EpsilonGreedy, {'epsilon': 0.01}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'Epsilon-Greedy (ε=0.10)',
                 'description': '10% exploration — standard',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐',
                 'wrapper': BanditCandidateWrapper(EpsilonGreedy, {'epsilon': 0.10}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'Epsilon-Greedy (ε=0.30)',
                 'description': '30% exploration — aggressive',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐',
                 'wrapper': BanditCandidateWrapper(EpsilonGreedy, {'epsilon': 0.30}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'UCB (α=0.5)',
                 'description': 'Upper Confidence Bound — conservative',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(UCBAlgorithm, {'alpha': 0.5}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'UCB (α=2.0)',
                 'description': 'Upper Confidence Bound — exploratory',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(UCBAlgorithm, {'alpha': 2.0}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'Thompson Sampling',
                 'description': 'Bayesian TS with conjugate priors',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(ThompsonSampling, {}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'LinUCB (α=0.5)',
                 'description': 'Linear UCB — contextual',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '📈 Linear',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(LinUCBAlgorithm, {'alpha': 0.5}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'LinUCB (α=1.0)',
                 'description': 'Linear UCB — more exploration',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '📈 Linear',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(LinUCBAlgorithm, {'alpha': 1.0}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'NonContextual TS',
                 'description': 'Non-contextual Thompson Sampling',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐',
                 'wrapper': BanditCandidateWrapper(NonContextualTSBandit, {}, OnlineRidgeRegression, {'feature_dim': dim})
             },
             {
                 'name': 'Bootstrap TS',
                 'description': 'Bootstrap Thompson Sampling with ensemble',
-                'category': '🚀 Stochastic (Fast)',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(BootstrapTSBandit, {}, BootstrapEnsembleModel, {'feature_dim': dim})
             },
@@ -294,7 +296,7 @@ class BanditCandidatePool:
             {
                 'name': 'GP-UCB Kernel (mult)',
                 'description': 'GP-UCB with multiplicative kernel',
-                'category': '🔮 Bayesian (GP)',
+                'category': '🔮 Gaussian Process',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(
                     GPUCBKernelFlexibleAlgorithm,
@@ -305,7 +307,7 @@ class BanditCandidatePool:
             {
                 'name': 'GP-UCB Kernel (adapt)',
                 'description': 'GP-UCB with adaptive kernel weights',
-                'category': '🔮 Bayesian (GP)',
+                'category': '🔮 Gaussian Process',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(
                     GPUCBKernelFlexibleAlgorithm,
@@ -316,7 +318,7 @@ class BanditCandidatePool:
             {
                 'name': 'GP-Thompson Sampling',
                 'description': 'Thompson Sampling with GP (RFF approx)',
-                'category': '🔮 Bayesian (GP)',
+                'category': '🔮 Gaussian Process',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(
                     GPTSBandit, {'d': dim, 'n_features': 100, 'kernel_scale': 1.0, 'lengthscale': 1.0},
@@ -326,7 +328,7 @@ class BanditCandidatePool:
             {
                 'name': 'Exact GP',
                 'description': 'Exact Gaussian Process (no RFF approximation)',
-                'category': '🔮 Bayesian (GP)',
+                'category': '🔮 Gaussian Process',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(
                     ThompsonSampling, {},
@@ -336,14 +338,14 @@ class BanditCandidatePool:
             {
                 'name': 'Kernel UCB',
                 'description': 'Kernel-based UCB',
-                'category': '🔮 Bayesian (GP)',
+                'category': '🔮 Gaussian Process',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(UCBAlgorithm, {'alpha': 1.0}, KernelUCBModel, {'feature_dim': dim})
             },
             {
                 'name': 'Custom TS (GLM Laplace)',
                 'description': 'Thompson Sampling with Laplace GLM approximation',
-                'category': '🔮 Bayesian (GP)',
+                'category': '📉 GLM',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(CustomTSBandit, {}, GLMLaplaceModel, {'feature_dim': dim})
             },
@@ -351,99 +353,94 @@ class BanditCandidatePool:
             {
                 'name': 'Neural UCB',
                 'description': 'Neural network-based UCB',
-                'category': '🧠 Neural (Slow)',
+                'category': '🧠 Neural',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NeuralUCBAlgorithm, {'beta': 2.0}, NeuralUCBModel, {'feature_dim': dim})
             },
             {
                 'name': 'NN-AGP UCB',
                 'description': 'Neural Network Augmented GP UCB',
-                'category': '🧠 Neural (Slow)',
+                'category': '🧠 Neural',
                 'complexity': '⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NNAGPUCBAlgorithm, {'beta': 2.0}, NNAGPModel, {'feature_dim': dim})
             },
             {
                 'name': 'NN-AGP Adaptive',
                 'description': 'NN-AGP with adaptive uncertainty',
-                'category': '🧠 Neural (Slow)',
+                'category': '🧠 Neural',
                 'complexity': '⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NNAGPUCBAdaptiveAlgorithm, {'beta': 2.0}, NNAGPModel, {'feature_dim': dim})
             },
             {
                 'name': 'NN-UCB',
                 'description': 'Deep Neural UCB',
-                'category': '🧠 Neural (Slow)',
+                'category': '🧠 Neural',
                 'complexity': '⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NNUCBAlgorithm, {'beta': 2.0}, NNUCBModel, {'feature_dim': dim})
             },
             {
                 'name': 'NN-TS-B',
                 'description': 'Neural Network Thompson Sampling (B)',
-                'category': '🧠 Neural (Slow)',
+                'category': '🧠 Neural',
                 'complexity': '⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NNTSBAlgorithm, {}, NeuralLinearModel, {'feature_dim': dim})
             },
             {
                 'name': 'Neural Bandit (Limited Memory)',
                 'description': 'Neural Bandit with limited memory buffer',
-                'category': '🧠 Neural (Slow)',
+                'category': '🧠 Neural',
                 'complexity': '⭐⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(NeuralBanditWithLimitedMemory_5, {}, NeuralLinearModel, {'feature_dim': dim})
             },
-            # {
-            #     'name': 'PFN-TS (Adaptive TabICL)',
-            #     'description': 'Thompson Sampling через Universal Subsampling CLT (PFN TabICL)',
-            #     'category': '🧠 Neural (Slow)',
-            #     'complexity': '⭐⭐⭐⭐⭐',
-            #     'wrapper': BanditCandidateWrapper(
-            #         PFNTSAlgorithm,
-            #         {'encoding': 'adaptive', 'alpha': 1.0},
-            #         TabICLRegressorPPD,
-            #         {}
-            #     )
-            # },
+            {
+                'name': 'PFN-TS (Adaptive TabICL)',
+                'description': 'Thompson Sampling через Universal Subsampling CLT (PFN TabICL)',
+                'category': '🧠 Neural',
+                'complexity': '⭐⭐⭐⭐⭐',
+                'wrapper': BanditCandidateWrapper(
+                    PFNTSAlgorithm,
+                    {'encoding': 'adaptive', 'alpha': 1.0},
+                    TabICLRegressorPPD,
+                    {}
+                )
+            },
             
             # SPECIAL — 5 алгоритмов
             {
                 'name': 'FGTS',
                 'description': 'Fast Greedy Thompson Sampling',
-                'category': '⚡ Special',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(FGTSAlgorithm, {}, FGTSModel, {'feature_dim': dim})
             },
             {
                 'name': 'FGTS Lasso',
                 'description': 'FGTS with Lasso regularization',
-                'category': '⚡ Special',
+                'category': '🎲 Non-contextual',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(FGTSAlgorithm, {}, FGTSLassoModel, {'feature_dim': dim})
             }
         ]
         
-        try:
-            import vowpalwabbit
-            candidates.append({
-                'name': 'RegCB',
-                'description': 'Regression-based Confidence Bound',
-                'category': '⚡ Special',
-                'complexity': '⭐⭐',
-                'wrapper': BanditCandidateWrapper(RegCBBandit, {}, OnlineRidgeRegression, {'feature_dim': dim})
-            })
-        except ImportError:
-            pass
-            
+        candidates.append({
+            'name': 'RegCB',
+            'description': 'Regression-based Confidence Bound',
+            'category': '📉 GLM',
+            'complexity': '⭐⭐',
+            'wrapper': BanditCandidateWrapper(RegCBBandit, {}, OnlineRidgeRegression, {'feature_dim': dim})
+        })
         candidates.extend([
             {
                 'name': 'SGD-TS',
                 'description': 'Stochastic Gradient Descent Thompson Sampling',
-                'category': '⚡ Special',
+                'category': '📈 Linear',
                 'complexity': '⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(SGDTSBandit, {}, SGDModel, {'feature_dim': dim})
             },
             {
                 'name': 'Linear Normal (CMAB)',
                 'description': 'Linear Normal model for Contextual MAB',
-                'category': '⚡ Special',
+                'category': '📈 Linear',
                 'complexity': '⭐⭐',
                 'wrapper': BanditCandidateWrapper(ThompsonSampling, {}, LinearNormalModel, {'feature_dim': dim})
             },
