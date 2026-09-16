@@ -24,10 +24,7 @@ from .gaussian_process import (
     GPUCBKernelFlexibleAlgorithm,
 )
 
-# try:
-#     from .glm import RegCBBandit
-# except ImportError:
-#     pass
+from .glm import RegCBBandit
 
 try:
     from .neural import (

@@ -90,7 +90,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'OnlineRidgeRegression',
             'model_params': {},
-            'category': '🚀 Stochastic',
+            'category': '🎲 Non-contextual',
         },
         {
             'name': 'UCB',
@@ -98,7 +98,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'OnlineRidgeRegression',
             'model_params': {},
-            'category': '🚀 Stochastic',
+            'category': '🎲 Non-contextual',
         },
         {
             'name': 'LinUCB',
@@ -106,7 +106,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'OnlineRidgeRegression',
             'model_params': {},
-            'category': '🚀 Stochastic',
+            'category': '📈 Linear',
         },
         {
             'name': 'Thompson Sampling',
@@ -114,7 +114,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'OnlineRidgeRegression',
             'model_params': {},
-            'category': '🚀 Stochastic',
+            'category': '🎲 Non-contextual',
         },
         {
             'name': 'Bootstrap TS',
@@ -122,7 +122,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'BootstrapEnsembleModel',
             'model_params': {},
-            'category': '🚀 Stochastic',
+            'category': '🎲 Non-contextual',
         },
         {
             'name': 'NonContextual TS',
@@ -130,7 +130,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': None,
             'model_params': None,
-            'category': '🚀 Stochastic',
+            'category': '🎲 Non-contextual',
         },
         {
             'name': 'GP-UCB (mult kernel)',
@@ -138,7 +138,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'GPRFFModel',
             'model_params': {},
-            'category': '🔮 Bayesian',
+            'category': '🔮 Gaussian Process',
         },
         {
             'name': 'GP-UCB Kernel (adapt)',
@@ -146,7 +146,7 @@ def get_available_algorithms_for_online():
             'params': {'kernel_type': 'adaptive'},
             'model_name': 'GPRFFModel',
             'model_params': {},
-            'category': '🔮 Bayesian',
+            'category': '🔮 Gaussian Process',
         },
         {
             'name': 'GP-TS',
@@ -154,7 +154,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'GPRFFModel',
             'model_params': {},
-            'category': '🔮 Bayesian',
+            'category': '🔮 Gaussian Process',
         },
         {
             'name': 'Exact GP',
@@ -162,7 +162,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'ExactGPModel',
             'model_params': {},
-            'category': '🔮 Bayesian',
+            'category': '🔮 Gaussian Process',
         },
         {
             'name': 'Kernel UCB',
@@ -170,7 +170,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'KernelUCBModel',
             'model_params': {},
-            'category': '🔮 Bayesian',
+            'category': '🔮 Gaussian Process',
         },
         {
             'name': 'Neural UCB',
@@ -188,21 +188,21 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '🧠 Neural',
         },
-        # {
-        #     'name': 'PFN-TS (Adaptive TabICL)',
-        #     'algo_name': 'PFNTSAlgorithm',
-        #     'params': {},
-        #     'model_name': 'TabICLRegressorPPD',
-        #     'model_params': {},
-        #     'category': '🧠 Neural',
-        # },
+        {
+            'name': 'PFN-TS (Adaptive TabICL)',
+            'algo_name': 'PFNTSAlgorithm',
+            'params': {},
+            'model_name': 'TabICLRegressorPPD',
+            'model_params': {},
+            'category': '🧠 Neural',
+        },
         {
             'name': 'FGTS',
             'algo_name': 'FGTSAlgorithm',
             'params': {},
             'model_name': 'FGTSModel',
             'model_params': {},
-            'category': '⚡ Special',
+            'category': '🎲 Non-contextual',
         },
         {
             'name': 'FGTS Lasso',
@@ -210,22 +210,18 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'FGTSLassoModel',
             'model_params': {},
-            'category': '⚡ Special',
+            'category': '🎲 Non-contextual',
         },
     ]
     
-    try:
-        import vowpalwabbit
-        algorithms.append({
-            'name': 'RegCB',
-            'algo_name': 'RegCBBandit',
-            'params': {},
-            'model_name': 'OnlineRidgeRegression',
-            'model_params': {},
-            'category': '⚡ Special',
-        })
-    except ImportError:
-        pass
+    algorithms.append({
+        'name': 'RegCB',
+        'algo_name': 'RegCBBandit',
+        'params': {},
+        'model_name': 'OnlineRidgeRegression',
+        'model_params': {},
+        'category': '📉 GLM',
+    })
         
     algorithms.extend([
         {
@@ -234,7 +230,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'SGDModel',
             'model_params': {},
-            'category': '⚡ Special',
+            'category': '📈 Linear',
         },
         {
             'name': 'Custom TS (GLM Laplace)',
@@ -242,7 +238,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'GLMLaplaceModel',
             'model_params': {},
-            'category': '🔮 Bayesian',
+            'category': '📉 GLM',
         },
         {
             'name': 'NN-AGP Adaptive',
@@ -282,7 +278,7 @@ def get_available_algorithms_for_online():
             'params': {},
             'model_name': 'LinearNormalModel',
             'model_params': {},
-            'category': '⚡ Special',
+            'category': '📈 Linear',
         },
     ])
     return pd.DataFrame(algorithms)
@@ -335,6 +331,8 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
             a_params['context_dim'] = feature_dim
         if 'input_dim' in init_params:
             a_params['input_dim'] = feature_dim
+        if 'n_features' in init_params:
+            a_params['n_features'] = feature_dim
             
         if model is not None:
             a_params['model'] = model
