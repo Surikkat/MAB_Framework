@@ -18,31 +18,54 @@ from mab_framework.experiment.runner import ExperimentRunner
 def get_available_environments():
     """Возвращает список доступных сред"""
     envs = [
+        # === СИНТЕТИКА ===
         {
-            'name': 'Синтетическая (линейная)',
+            'name': 'Linear Synthetic',
             'id': 'synthetic_linear',
             'type': 'synthetic',
-            'description': 'Линейная среда с гауссовским шумом',
+            'description': 'Линейная среда: r = <θ_a, x> + шум',
             'env_class': 'SyntheticLinearEnv',
-            'default_params': {
-                'n_arms': 10,
-                'context_dim': 5,
-                'noise_std': 0.1,
-            },
+            'default_params': {'n_arms': 10, 'context_dim': 5, 'noise_std': 0.1},
             'n_arms': 10,
         },
         {
-            'name': 'Синтетическая (нейронная)',
+            'name': 'GLM Synthetic',
+            'id': 'synthetic_glm',
+            'type': 'synthetic',
+            'description': 'Логистическая среда: P(r=1) = σ(<θ_a, x>)',
+            'env_class': 'SyntheticGLMEnv',
+            'default_params': {'n_arms': 10, 'context_dim': 5},
+            'n_arms': 10,
+        },
+        {
+            'name': 'Neural Synthetic',
             'id': 'synthetic_neural',
-            'type': 'synthetic', 
-            'description': 'Нелинейная среда с большей размерностью',
-            'env_class': 'SyntheticLinearEnv',
+            'type': 'synthetic',
+            'description': 'Нелинейная среда: r = MLP(x) с ReLU',
+            'env_class': 'SyntheticNeuralEnv',
+            'default_params': {'n_arms': 10, 'context_dim': 5, 'hidden_dim': 32, 'noise_std': 0.1},
+            'n_arms': 10,
+        },
+        {
+            'name': 'Non-contextual Synthetic',
+            'id': 'synthetic_noncontextual',
+            'type': 'synthetic',
+            'description': 'Безконтекстная среда: у каждой руки фиксированное среднее',
+            'env_class': 'SyntheticNonContextualEnv',
+            'default_params': {'n_arms': 10, 'context_dim': 1, 'noise_std': 1.0},
+            'n_arms': 10,
+        },
+        # === SOTA ===
+        {
+            'name': 'Mushrooms',
+            'id': 'mushrooms',
+            'type': 'real',
+            'description': 'Классификация грибов (съедобный/ядовитый)',
+            'env_class': 'DatasetEnvironment',
             'default_params': {
-                'n_arms': 20,
-                'context_dim': 10,
-                'noise_std': 0.2,
+                'dataset_path': str(MAB_PATH / 'mab_framework/data/mushroom_bandit_5000.csv'),
             },
-            'n_arms': 20,
+            'n_arms': None,
         },
         {
             'name': 'MovieLens 100K',
@@ -53,18 +76,7 @@ def get_available_environments():
             'default_params': {
                 'dataset_path': str(MAB_PATH / 'mab_framework/data/movielens_bandit_5000.csv'),
             },
-            'n_arms': 20,
-        },
-        {
-            'name': 'Mushrooms',
-            'id': 'mushrooms',
-            'type': 'real',
-            'description': 'Классификация грибов (съедобный/ядовитый)',
-            'env_class': 'DatasetEnvironment',
-            'default_params': {
-                'dataset_path': str(MAB_PATH / 'mab_framework/data/mushroom_bandit_5000.csv'),
-            },
-            'n_arms': 20,
+            'n_arms': None,
         },
     ]
     return pd.DataFrame(envs)
@@ -177,14 +189,14 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '🧠 Neural',
         },
-        {
-            'name': 'PFN-TS (Adaptive TabICL)',
-            'algo_name': 'PFNTSAlgorithm',
-            'params': {},
-            'model_name': 'TabICLRegressorPPD',
-            'model_params': {},
-            'category': '🧠 Neural',
-        },
+        # {
+        #     'name': 'PFN-TS (Adaptive TabICL)',
+        #     'algo_name': 'PFNTSAlgorithm',
+        #     'params': {},
+        #     'model_name': 'TabICLRegressorPPD',
+        #     'model_params': {},
+        #     'category': '🧠 Neural',
+        # },
         {
             'name': 'FGTS',
             'algo_name': 'FGTSAlgorithm',
@@ -310,19 +322,16 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
         a_params = dict(algo_row['params'])
         a_params['n_arms'] = n_arms
         
-        if 'x_dim' in init_params:
-            a_params['x_dim'] = feature_dim
-        if 'theta_dim' in init_params:
-            a_params['theta_dim'] = feature_dim
-        if 'd' in init_params:
-            a_params['d'] = feature_dim
-        if 'context_dim' in init_params:
-            a_params['context_dim'] = feature_dim
-        if 'input_dim' in init_params:
-            a_params['input_dim'] = feature_dim
-        if 'n_features' in init_params:
-            a_params['n_features'] = feature_dim
-            
+        # Автоподстановка размерности
+        for key in ('x_dim', 'theta_dim', 'd', 'context_dim', 'input_dim', 'n_features'):
+            if key in init_params:
+                a_params.setdefault(key, feature_dim)
+                break
+        
+        # Фильтрация невалидных параметров (важно!)
+        valid_keys = set(init_params)
+        a_params = {k: v for k, v in a_params.items() if k in valid_keys}
+        
         if model is not None:
             a_params['model'] = model
         
@@ -340,21 +349,31 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
     EnvClass = getattr(environments, env_row['env_class'])
     env = EnvClass(**env_params)
     
-    n_arms = getattr(env, 'n_arms', env_row.get('n_arms', 10))
+    # n_arms из среды (приоритет) или из env_row
+    n_arms = getattr(env, 'n_arms', None) or env_row.get('n_arms') or 10
     
-    # Определяем feature_dim
-    feature_dim = 5
+    # feature_dim из первого контекста
+    feature_dim = None
     try:
         sample_context = env.get_context()
-        feature_dim = sample_context.shape[-1]
+        if hasattr(sample_context, 'shape'):
+            feature_dim = sample_context.shape[-1]
         env.reset()
     except Exception:
         pass
     
+    if feature_dim is None:
+        feature_dim = getattr(env, 'context_dim', 5)
+    
+    # Ограничение шагов
+    env_T = getattr(env, 'T', None)
+    if env_T is not None and steps > env_T:
+        steps = env_T
+    
     all_results = {}
     
     for _, algo_row in selected_algos.iterrows():
-        algo_name = algo_row.get('display_name', algo_row['name'])
+        algo_name = algo_row.get('name', algo_row.get('display_name', 'unknown'))
         
         if progress_callback:
             progress_callback(f"Запуск: {algo_name}...")
