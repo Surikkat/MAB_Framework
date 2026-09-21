@@ -27,6 +27,16 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown("""
+<style>
+div[data-testid="stMetricValue"] > div {
+    font-size: 1.45rem !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 if 'benchmark_results' not in st.session_state:
     st.session_state['benchmark_results'] = None
 if 'online_results' not in st.session_state:
@@ -498,13 +508,34 @@ else:
             key="online_env_real"
         )
         env_row = real_envs[real_envs['name'] == selected_env].iloc[0]
-        env_params = env_row.get('default_params', {})
+        env_params = dict(env_row.get('default_params', {}))
         
     else:
         st.info("📂 Загрузка своих данных появится в следующей версии")
         st.stop()
 
-    c1, c2, c3 = st.columns(3)
+    with st.expander("⏱️ Настройки задержки наград (Delayed Feedback)", expanded=False):
+        delay_mode = st.radio(
+            "Тип задержки наград:",
+            ["🟢 Без задержки", "⏱️ Фиксированная задержка", "🎲 Геометрическая задержка"],
+            horizontal=True,
+            key="online_delay_mode"
+        )
+        if delay_mode == "⏱️ Фиксированная задержка":
+            delay_steps = st.slider("Величина задержки (шагов):", 1, 50, 5, key="online_delay_fixed_val")
+            delay_config = {"type": "fixed", "value": delay_steps}
+        elif delay_mode == "🎲 Геометрическая задержка":
+            mean_delay = st.slider("Средняя задержка (шагов):", 1, 50, 10, key="online_delay_geom_val")
+            p = 1.0 / (mean_delay + 1.0)
+            st.caption(f"Вероятность получения награды на каждом шаге: p ≈ {p:.3f}")
+            delay_config = {"type": "geometric", "p": p}
+        else:
+            delay_config = {"type": "fixed", "value": 0}
+
+    env_params['delay_config'] = delay_config
+    st.session_state['online_delay_saved'] = delay_config
+
+    c1, c2, c3, c4 = st.columns([1.0, 0.8, 1.0, 1.6])
     with c1:
         st.metric("Тип", env_row['type'])
     with c2:
@@ -515,6 +546,14 @@ else:
             st.metric("Размерность", env_params['context_dim'])
         else:
             st.metric("Описание", str(env_row['description'])[:50] + "...")
+    with c4:
+        if delay_config['type'] == 'geometric':
+            d_label = f"Геом. (p≈{delay_config['p']:.2f})"
+        elif delay_config['value'] > 0:
+            d_label = f"Фикс. ({delay_config['value']} шаг.)"
+        else:
+            d_label = "Без задержки"
+        st.metric("Задержка", d_label)
     
     st.subheader("2️⃣ Выберите алгоритмы")
     algos_df = get_available_algorithms_for_online()
@@ -646,7 +685,16 @@ else:
         
         st.divider()
         st.header("📊 Результаты онлайн-эксперимента")
-        st.caption(f"Среда: {st.session_state.get('online_env', '')} | Шагов: {s} | Запусков: {st.session_state.get('online_runs_saved', '')}")
+        saved_delay = st.session_state.get('online_delay_saved', {'type': 'fixed', 'value': 0})
+        if saved_delay.get('type') == 'geometric':
+            p_val = saved_delay.get('p', 1.0)
+            mean_d = round(1.0 / p_val - 1.0) if p_val > 0 else 0
+            delay_desc = f"🎲 Геометрическая (ср. {mean_d} шагов, p ≈ {p_val:.3f})"
+        elif saved_delay.get('value', 0) > 0:
+            delay_desc = f"⏱️ Фиксированная ({saved_delay.get('value')} шагов)"
+        else:
+            delay_desc = "🟢 Без задержки"
+        st.caption(f"Среда: {st.session_state.get('online_env', '')} | Задержка: {delay_desc} | Шагов: {s} | Запусков: {st.session_state.get('online_runs_saved', '')}")
         
         errors = {name: data['error'] for name, data in all_results.items() if 'error' in data}
         if errors:
@@ -668,6 +716,11 @@ else:
         fig.update_layout(title="Cumulative Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500)
         st.plotly_chart(fig, use_container_width=True)
         
+        st.subheader("📈 Cumulative Regret (Log Scale)")
+        fig_log = go.Figure(fig)
+        fig_log.update_layout(title="Cumulative Regret (Log Scale)", yaxis_type="log")
+        st.plotly_chart(fig_log, use_container_width=True)
+        
         st.subheader("📉 Average Regret")
         fig2 = go.Figure()
         for name, data in all_results.items():
@@ -676,6 +729,11 @@ else:
                                          name=name, mode='lines', line=dict(width=2)))
         fig2.update_layout(title="Average Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500)
         st.plotly_chart(fig2, use_container_width=True)
+        
+        st.subheader("📉 Average Regret (Log Scale)")
+        fig2_log = go.Figure(fig2)
+        fig2_log.update_layout(title="Average Regret (Log Scale)", yaxis_type="log")
+        st.plotly_chart(fig2_log, use_container_width=True)
 
 st.divider()
 st.caption(f"🎯 OPE Platform v0.4.0 | {datetime.now().year}")

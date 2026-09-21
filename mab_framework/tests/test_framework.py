@@ -98,7 +98,7 @@ class DummyEnv:
     def get_context(self):
         return np.ones((self.n_arms, 2))
         
-    def step(self, action):
+    def step(self, action, context=None):
         self.current_step += 1
         reward = 1.0 if action == 0 else 0.0
         # Возвращаем в формате, который ожидает runner

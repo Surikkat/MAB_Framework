@@ -4,7 +4,3 @@ from .thompson_sampling import ThompsonSampling
 from .noncontextual_ts_bandit import NonContextualTSBandit
 from .bootstrap_ts_bandit import BootstrapTSBandit
 from .fgts import FGTSAlgorithm
-from .joulani_ucb import JoulaniDelayedUCB
-from .patient_bandits import PatientBandits
-from .vernade_ucb import VernadeDelayedUCB
-from .delayed_ts import DelayedThompsonSampling

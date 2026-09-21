@@ -26,6 +26,8 @@ class BaseDatasetEnvironment(BaseEnvironment):
 
     def reset(self) -> None:
         self.current_step = 0
+        self.delay_buffer.queue.clear()
+        self.delay_buffer.current_time = 0
 
     def get_context(self) -> np.ndarray:
         if self.current_step >= self.T:

@@ -192,6 +192,39 @@ ALGO_HYPERPARAMS = {
         ],
     },
     # ═══════════════════════════════════════════
+    # ⏱️ Delayed
+    # ═══════════════════════════════════════════
+    'DelayedThompsonSampling': {
+        'algo_params': [
+            {'key': 'nu', 'label': 'ν (variance scale)', 'type': 'number',
+             'min': 0.01, 'max': 5.0, 'default': 1.0, 'step': 0.1},
+            {'key': 'gamma', 'label': 'γ (deflation coef)', 'type': 'number',
+             'min': 0.01, 'max': 5.0, 'default': 1.0, 'step': 0.1},
+        ],
+        'model_params': [
+            {'key': 'l2_reg', 'label': 'L2 regularization (λ)', 'type': 'number',
+             'default': 1.0, 'min': 0.01, 'step': 0.1},
+        ],
+    },
+    'JoulaniDelayedUCB': {
+        'algo_params': [],
+        'model_params': [],
+    },
+    'VernadeDelayedUCB': {
+        'algo_params': [
+            {'key': 'D_max', 'label': 'D_max (max delay)', 'type': 'number',
+             'min': 50, 'max': 5000, 'default': 1000, 'step': 50},
+        ],
+        'model_params': [],
+    },
+    'PatientBandits': {
+        'algo_params': [
+            {'key': 'alpha', 'label': 'α (penalty exponent ≤ 0.5)', 'type': 'number',
+             'min': 0.05, 'max': 0.5, 'default': 0.5, 'step': 0.05},
+        ],
+        'model_params': [],
+    },
+    # ═══════════════════════════════════════════
     # Special Mappings by Display Name
     # ═══════════════════════════════════════════
     'Exact GP': {

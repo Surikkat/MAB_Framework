@@ -7,10 +7,13 @@ from .non_contextual import (
     NonContextualTSBandit,
     BootstrapTSBandit,
     FGTSAlgorithm,
+)
+
+from .delayed import (
+    DelayedThompsonSampling,
     JoulaniDelayedUCB,
     PatientBandits,
     VernadeDelayedUCB,
-    DelayedThompsonSampling,
 )
 
 from .linear import (

@@ -281,6 +281,38 @@ def get_available_algorithms_for_online():
             'model_params': {},
             'category': '📈 Linear',
         },
+        {
+            'name': 'Delayed Thompson Sampling',
+            'algo_name': 'DelayedThompsonSampling',
+            'params': {},
+            'model_name': 'OnlineRidgeRegression',
+            'model_params': {},
+            'category': '⏱️ Delayed',
+        },
+        {
+            'name': 'Joulani Delayed UCB',
+            'algo_name': 'JoulaniDelayedUCB',
+            'params': {},
+            'model_name': None,
+            'model_params': None,
+            'category': '⏱️ Delayed',
+        },
+        {
+            'name': 'Vernade Delayed UCB',
+            'algo_name': 'VernadeDelayedUCB',
+            'params': {},
+            'model_name': None,
+            'model_params': None,
+            'category': '⏱️ Delayed',
+        },
+        {
+            'name': 'Patient Bandits',
+            'algo_name': 'PatientBandits',
+            'params': {},
+            'model_name': None,
+            'model_params': None,
+            'category': '⏱️ Delayed',
+        },
     ])
     return pd.DataFrame(algorithms)
 
@@ -322,6 +354,9 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
         a_params = dict(algo_row['params'])
         a_params['n_arms'] = n_arms
         
+        if 'horizon_T' in init_params:
+            a_params.setdefault('horizon_T', 2000)
+
         # Автоподстановка размерности
         for key in ('x_dim', 'theta_dim', 'd', 'context_dim', 'input_dim', 'n_features'):
             if key in init_params:
