@@ -4,18 +4,19 @@
 
 # BanditLab
 
-A modular framework for experimenting with multi-armed bandits (MAB).
+A modular framework for reproducible contextual bandit research with three levels of accessibility.
 
-* 20+ algorithms (from classical to state-of-the-art)
-* unified API
-* plug-and-play models and datasets
-* config-driven experiments
+- 20+ algorithms (from classical to state-of-the-art)
+- unified API
+- plug-and-play models and datasets
+- config-driven experiments
+- **Streamlit GUI** — no coding required
 
-**BanditLab** is designed for both research and practical experimentation. It provides a unified interface for combining:
+**BanditLab** is designed for both research and practical experimentation. It provides three complementary levels of interaction:
 
-* bandit algorithms (UCB, Thompson Sampling, Neural, GP-based, etc.)
-* predictive models (linear, GLM, neural networks, Gaussian processes)
-* environments (real datasets or simulators)
+1. **Python Library** — maximum flexibility for researchers and engineers
+2. **YAML Configuration** — reproducible experiments without coding
+3. **Streamlit Web Interface** — accessible GUI for non-programmers
 
 ---
 
@@ -24,34 +25,36 @@ A modular framework for experimenting with multi-armed bandits (MAB).
 ```bash
 pip install BanditLab
 ```
-
 ---
 
-## Quick Start (Python API)
+## Three Levels of Accessibility
 
-```python
+### Level 1: Python Library (Maximum Flexibility)
+
+Full programmatic control over every component:
+
+'''python
 from mab_framework.algorithms import ThompsonSampling
 from mab_framework.environments import DatasetEnvironment
+from mab_framework.models import OnlineRidgeRegression
 
 env = DatasetEnvironment("data/mushroom_bandit_5000.csv")
-
-bandit = ThompsonSampling(...)
+model = OnlineRidgeRegression(l2_reg=1.0)
+bandit = ThompsonSampling(model=model, n_arms=env.n_arms)
 
 for context in env:
     arm = bandit.select_arm(context)
     reward = env.pull(arm)
     bandit.update(context, arm, reward)
-```
+'''
 
----
+Target audience: Academic researchers, data scientists, ML engineers.
 
-## Config-Based Experiments (Recommended)
+### Level 2: YAML Configuration (Reproducible Experiments)
 
-BanditLab supports fully declarative experiment setup via configs.
+Declarative experiment specification without writing code:
 
-Example config:
-
-```yaml
+'''yaml
 experiment:
   name: "pool_test"
   steps: 200
@@ -85,163 +88,164 @@ metrics:
 
 output:
   save_path: "./results/pool_test"
-```
+'''
 
-Run via:
+Run with a single command:
+'''bash
+python -m banditlab config.yaml
+'''
 
-```bash
-python banditlab config.yaml
-```
+Target audience: Academic researchers, data scientists, ML engineers.
 
-This allows running experiments without writing Python code and ensures full reproducibility.
+### Level 3: Streamlit Web Interface (Maximum Accessibility)
 
----
+Intuitive web-based GUI — no programming required:
+
+'''bash
+streamlit run streamlit_bandit/app.py
+'''
+
+Features:
+
+  - Offline Policy Evaluation (OPE) — evaluate algorithms on historical logs using DM, IPS, and DR estimators
+
+  - Online Benchmarking — run algorithms on synthetic and real-world environments with regret visualization
+
+  - Dynamic hyperparameter configuration
+
+  - Real-time progress tracking
+
+  - Interactive charts and leaderboards
+
+  - Exportable reports
+
+Target audience: Business analysts, product managers, educators, domain experts.
 
 ## Key Features
 
-* **20+ algorithms** — from classical (UCB, TS) to neural and GP-based methods
-* **Model–Algorithm decoupling** — combine any algorithm with any reward model
-* **Config-driven experiments** — easy experimentation without coding
-* **Contextual bandits support**
-* **Delayed feedback support** — built-in support for bandits with delays
-* **Extensible** — easily implement new algorithms or models
-* **Reproducible experiments** — runner, logging, and metrics included
+- 20+ algorithms — from classical (UCB, TS) to neural and GP-based methods
 
----
+- Model–Algorithm decoupling — combine any algorithm with any reward model
+
+- Three levels of use — Python API, YAML configs, or Streamlit GUI
+
+- Contextual bandits support
+
+- Delayed feedback support — built-in support for bandits with delays
+
+- Offline Policy Evaluation — DM, IPS, DR estimators
+
+- Extensible — easily implement new algorithms or models
+
+- Reproducible experiments — runner, logging, and metrics included
 
 ## Core Design
 
-BanditLab separates *decision-making* from *prediction*:
+BanditLab separates decision-making from prediction:
 
-* **Models** learn to predict rewards from context
-* **Algorithms** decide which arm to pull using model outputs
+  - Models learn to predict rewards from context
+
+  - Algorithms decide which arm to pull using model outputs
 
 This enables flexible combinations:
 
-* Thompson Sampling + Linear Model
-* Thompson Sampling + GLM
-* UCB + Neural Network
-* UCB + Gaussian Process
+  - Thompson Sampling + Linear Model
 
----
+  - Thompson Sampling + GLM
 
-## Architecture Overview
+  - UCB + Neural Network
 
-The framework is built around four components:
-
-* **Environments** — provide contexts and rewards
-* **Models** — estimate reward (typically one per arm)
-* **Algorithms** — handle exploration vs exploitation
-* **Runner** — executes experiment loops
-
----
-
-## Example: Running a Benchmark
-
-```bash
-python scripts/run_mushrooms.py
-```
-
-This runs multiple algorithms on a real dataset and produces:
-
-* cumulative regret plots
-* average regret curves
-
----
+  - UCB + Gaussian Process
 
 ## Supported Methods
 
-### Algorithms
+### Algorithms (20+)
 
-Includes 20+ implementations, such as:
 
-* Epsilon-Greedy
-* UCB / LinUCB
-* Thompson Sampling
-* Neural UCB
-* GP-based methods
-* GLM-based bandits
+Models
 
-## 🕰️ Academic Delayed Feedback Algorithms
+    OnlineRidgeRegression (linear)
 
-BanditLab provides state-of-the-art academic implementations of Multi-Armed Bandit algorithms under delayed feedback. These methods strictly adhere to the mathematical bounds established in peer-reviewed literature and avoid ad-hoc heuristics.
+    GLMLaplaceModel (generalized linear)
 
-* **JoulaniDelayedUCB**: Implements the order-optimal delay-adapted UCB from *Joulani et al., 2013 ("Online Learning under Delayed Feedback")*. It strictly computes confidence intervals based exclusively on resolved observations, handling arbitrary delays elegantly.
-* **VernadeDelayedUCB**: From *Vernade et al., 2017 ("Stochastic Bandit Models for Delayed Conversions")*. This algorithm assumes knowledge of the delay CDF and models the expected number of arrivals. Our implementation uses amortized $O(1)$ complexity via $D_{max}$ truncation, avoiding the traditional $O(T^2)$ computational bottleneck.
-* **PatientBandits**: Derived from *Manegueu et al., 2020 ("Stochastic bandits with arm-dependent delays")*. It guarantees finite-horizon theoretical bounds specifically crafted for heavy-tailed delay distributions and relies on a dedicated tail-index parameter $\alpha$.
-* **DelayedThompsonSampling**: As established by *Chapelle & Li, 2011*, plain Thompson Sampling handles delays natively without modifying the posterior. This algorithm simply waits for resolved data to update the model and samples from the true posterior, sidestepping variance deflation pitfalls.
+    GPRFFModel, ExactGPModel (Gaussian processes)
 
-### Models
+    NeuralUCBModel, NNUCBModel, NNAGPModel (neural networks)
 
-* Linear / Ridge Regression
-* GLM (Laplace approximation)
-* Gaussian Processes (RFF)
-* Neural Networks
-* LASSO-based models
+    FGTSModel, FGTSLassoModel
 
----
+    BootstrapEnsembleModel
 
-## Project Structure
+    SGDModel
 
-```
-mab_framework/
-├── algorithms/
-├── models/
-├── environments/
-├── experiment/
-└── scripts/
-```
+    KernelUCBModel
 
----
+Architecture
 
-## Extending the Framework
+The framework is built around four components:
 
-### Custom Model
+    Environments — provide contexts and rewards (synthetic or data-driven)
 
-```python
-predict(context)
-update(context, reward)
-```
+    Models — estimate reward (typically one per arm)
 
-### Custom Algorithm
+    Algorithms — handle exploration vs exploitation
 
-```python
-select_arm(context)
-update(context, arm, reward)
-```
+    Runner — executes experiment loops
+
+Project Structure
+text
+
+mab_framework/           # Core library
+├── algorithms/          # Bandit algorithms
+├── models/              # Reward prediction models
+├── environments/        # Data sources and simulators
+├── experiment/          # Runner and logging
+└── scripts/             # Utility scripts
+
+streamlit_bandit/        # Streamlit GUI application
+├── app.py               # Main entry point
+├── core/                # Core logic (candidates, hyperparams, online experiments)
+├── data/                # Demo datasets
+└── utils/               # Visualization and export utilities
+
+Extending the Framework
+Custom Model
+python
+
+class CustomModel:
+    def fit(self, X, y): ...
+    def predict(self, X): ...
+    def get_uncertainty(self, X): ...
+
+Custom Algorithm
+python
+
+class CustomAlgorithm:
+    def select_arm(self, context): ...
+    def update(self, context, arm, reward): ...
 
 All components inherit from base classes, making extension straightforward.
 
----
-
-## Reproducibility
-
-BanditLab includes:
-
-* experiment runner
-* logging utilities
-* regret metrics
-
-Designed for fair comparison of algorithms across datasets.
-
----
-
-## Documentation
-
-Detailed developer documentation is available in:
-
-```
-docs/DEVELOPMENT.md
-```
-
----
-
-## License
+License
 
 MIT License
+Citation
 
----
+If you use BanditLab in research, please consider citing the repository:
+bibtex
 
-## Citation
+@misc{banditlab2024,
+    author = {BanditLab Contributors},
+    title = {BanditLab: A Modular Framework for Contextual Bandit Research},
+    year = {2024},
+    publisher = {GitHub},
+    url = {https://github.com/Surikkat/MAB_Framework}
+}
 
-If you use BanditLab in research, please consider citing the repository.
+Links
+
+    PyPI: https://pypi.org/project/BanditLab/
+
+    GitHub: https://github.com/Surikkat/MAB_Framework
+
+    Documentation: Coming soon

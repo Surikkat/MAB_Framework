@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "banditlab"
-version = "0.2.1"
+version = "1.0.0"
 description = "Multi-Armed Bandit Framework with support for contextual, GLM, NN, GP-based and delayed methods"
 authors = ["Egor Suraveykin <surikkatik@gmail.com>"]
 readme = "README.md"

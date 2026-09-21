@@ -5,9 +5,11 @@ experiment:
   seed: 42
 
 environment:
-  name: "DatasetEnvironment"
+  name: "SyntheticLinearEnv"
   params:
-    dataset_path: "mab_framework/data/E1_dataset.npz"
+    n_arms: 10
+    context_dim: 5
+    noise_std: 0.1
 
 algorithms:
   - name: "SGDTSBandit"

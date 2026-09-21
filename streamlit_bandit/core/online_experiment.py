@@ -66,17 +66,6 @@ def get_available_environments():
             },
             'n_arms': 20,
         },
-        {
-            'name': 'E1 Dataset (NPZ)',
-            'id': 'e1_dataset',
-            'type': 'real',
-            'description': 'Синтетический E1 датасет из фреймворка',
-            'env_class': 'NPZDatasetEnv',
-            'default_params': {
-                'dataset_path': str(MAB_PATH / 'mab_framework/data/E1_dataset.npz'),
-            },
-            'n_arms': 10,
-        },
     ]
     return pd.DataFrame(envs)
 
