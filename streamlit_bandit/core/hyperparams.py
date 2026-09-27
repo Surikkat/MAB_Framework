@@ -77,7 +77,7 @@ ALGO_HYPERPARAMS = {
             {'key': 'sigma_noise', 'label': 'σ_noise', 'type': 'number',
              'default': 0.01, 'min': 0.001, 'step': 0.001, 'format': '%.4f'},
             {'key': 'kernel_type', 'label': 'Kernel type', 'type': 'selectbox',
-             'options': ['multiplicative', 'additive', 'rbf'], 'default': 'multiplicative'},
+             'options': ['multiplicative', 'adaptive', 'additive', 'rbf'], 'default': 'multiplicative'},
         ],
         'model_params': [],
     },

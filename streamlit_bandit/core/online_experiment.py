@@ -137,16 +137,16 @@ def get_available_algorithms_for_online():
             'name': 'GP-UCB (mult kernel)',
             'algo_name': 'GPUCBKernelFlexibleAlgorithm',
             'params': {},
-            'model_name': 'GPRFFModel',
-            'model_params': {},
+            'model_name': None,
+            'model_params': None,
             'category': '🔮 Gaussian Process',
         },
         {
             'name': 'GP-UCB Kernel (adapt)',
             'algo_name': 'GPUCBKernelFlexibleAlgorithm',
             'params': {'kernel_type': 'adaptive'},
-            'model_name': 'GPRFFModel',
-            'model_params': {},
+            'model_name': None,
+            'model_params': None,
             'category': '🔮 Gaussian Process',
         },
         {
@@ -245,8 +245,8 @@ def get_available_algorithms_for_online():
             'name': 'NN-AGP Adaptive',
             'algo_name': 'NNAGPUCBAdaptiveAlgorithm',
             'params': {},
-            'model_name': 'NNAGPModel',
-            'model_params': {},
+            'model_name': None,
+            'model_params': None,
             'category': '🧠 Neural',
         },
         {
@@ -358,7 +358,11 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
             a_params.setdefault('horizon_T', 2000)
 
         # Автоподстановка размерности
-        for key in ('x_dim', 'theta_dim', 'd', 'context_dim', 'input_dim', 'n_features'):
+        if 'theta_dim' in init_params:
+            a_params.setdefault('theta_dim', 0)
+        if 'x_dim' in init_params:
+            a_params.setdefault('x_dim', feature_dim)
+        for key in ('d', 'context_dim', 'input_dim', 'n_features'):
             if key in init_params:
                 a_params.setdefault(key, feature_dim)
                 break

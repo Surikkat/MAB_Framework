@@ -9,7 +9,7 @@ class GPUCBKernelFlexibleAlgorithm(BaseAlgorithm):
     """
     Gaussian Process UCB with multiplicative or adaptive kernel over (theta, x) pairs.
     """
-    def __init__(self, n_arms: int, x_dim: int, theta_dim: int,
+    def __init__(self, n_arms: int, x_dim: int = 5, theta_dim: int = 0,
                  sigma_noise: float = 0.01, beta: float = 2.0,
                  lengthscale_x: float = 1.0, lengthscale_theta: float = 1.0,
                  kernel_type: str = 'multiplicative',
@@ -53,6 +53,9 @@ class GPUCBKernelFlexibleAlgorithm(BaseAlgorithm):
             w_theta = self.adaptive_weights.get('theta', 0.5)
             w_x = self.adaptive_weights.get('x', 0.5)
             return w_theta * k_theta + w_x * k_x
+        elif self.kernel_type == 'additive':
+            return k_theta + k_x
+        return k_x
 
     def select_arm(self, context: np.ndarray) -> int:
         if context.ndim == 1:

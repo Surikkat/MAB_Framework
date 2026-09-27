@@ -23,8 +23,8 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
     def __init__(
         self,
         n_arms: int,
-        theta_dim: int,
-        x_dim: int,
+        theta_dim: int = 0,
+        x_dim: int = 5,
         m: int = 5,
         hidden_dim: int = 64,
         init_lengthscale: float = 1.0,

@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import plotly.graph_objects as go
+import plotly.express as px
 from pathlib import Path
 
 _root_dir = str(Path(__file__).resolve().parent.parent)
@@ -706,6 +707,9 @@ else:
         st.subheader("🏆 Leaderboard")
         st.dataframe(results_df, use_container_width=True, hide_index=True)
         
+        # Расширенная палитра (Alphabet = 26 цветов + Light24 = 24 цвета, итого 50)
+        extended_colorway = px.colors.qualitative.Alphabet + px.colors.qualitative.Light24
+
         st.subheader("📈 Cumulative Regret")
         fig = go.Figure()
         t_range = np.arange(1, s + 1)
@@ -713,12 +717,12 @@ else:
             if 'cumulative_regret_mean' in data:
                 fig.add_trace(go.Scatter(x=t_range[:len(data['cumulative_regret_mean'])], y=data['cumulative_regret_mean'],
                                         name=name, mode='lines', line=dict(width=2)))
-        fig.update_layout(title="Cumulative Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500)
+        fig.update_layout(title="Cumulative Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500, colorway=extended_colorway)
         st.plotly_chart(fig, use_container_width=True)
         
         st.subheader("📈 Cumulative Regret (Log Scale)")
         fig_log = go.Figure(fig)
-        fig_log.update_layout(title="Cumulative Regret (Log Scale)", yaxis_type="log")
+        fig_log.update_layout(title="Cumulative Regret (Log Scale)", yaxis_type="log", colorway=extended_colorway)
         st.plotly_chart(fig_log, use_container_width=True)
         
         st.subheader("📉 Average Regret")
@@ -727,12 +731,12 @@ else:
             if 'average_regret_mean' in data:
                 fig2.add_trace(go.Scatter(x=t_range[:len(data['average_regret_mean'])], y=data['average_regret_mean'],
                                          name=name, mode='lines', line=dict(width=2)))
-        fig2.update_layout(title="Average Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500)
+        fig2.update_layout(title="Average Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500, colorway=extended_colorway)
         st.plotly_chart(fig2, use_container_width=True)
         
         st.subheader("📉 Average Regret (Log Scale)")
         fig2_log = go.Figure(fig2)
-        fig2_log.update_layout(title="Average Regret (Log Scale)", yaxis_type="log")
+        fig2_log.update_layout(title="Average Regret (Log Scale)", yaxis_type="log", colorway=extended_colorway)
         st.plotly_chart(fig2_log, use_container_width=True)
 
 st.divider()
