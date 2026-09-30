@@ -19,7 +19,14 @@ from utils.visualisation import (
     plot_effective_sample_size,
     plot_method_agreement
 )
-from utils.export import generate_report
+from utils.export import (
+    generate_report,
+    get_effective_algorithm_params,
+    generate_online_csv_report,
+    generate_online_text_report,
+    generate_online_html_report,
+    generate_online_pdf_report
+)
 from core.hyperparams import render_hyperparams, reset_hyperparams
 
 st.set_page_config(
@@ -686,58 +693,125 @@ else:
         
         st.divider()
         st.header("📊 Результаты онлайн-эксперимента")
+
+        # --- Подготовка данных для отчёта ---
         saved_delay = st.session_state.get('online_delay_saved', {'type': 'fixed', 'value': 0})
         if saved_delay.get('type') == 'geometric':
             p_val = saved_delay.get('p', 1.0)
             mean_d = round(1.0 / p_val - 1.0) if p_val > 0 else 0
-            delay_desc = f"🎲 Геометрическая (ср. {mean_d} шагов, p ≈ {p_val:.3f})"
+            delay_desc = f"Геометрическая (ср. {mean_d} шагов, p = {p_val:.3f})"
         elif saved_delay.get('value', 0) > 0:
-            delay_desc = f"⏱️ Фиксированная ({saved_delay.get('value')} шагов)"
+            delay_desc = f"Фиксированная ({saved_delay.get('value')} шагов)"
         else:
-            delay_desc = "🟢 Без задержки"
-        st.caption(f"Среда: {st.session_state.get('online_env', '')} | Задержка: {delay_desc} | Шагов: {s} | Запусков: {st.session_state.get('online_runs_saved', '')}")
-        
+            delay_desc = "Без задержки"
+
+        env_name = st.session_state.get('online_env', '')
+        n_runs_saved = st.session_state.get('online_runs_saved', '')
+
+        algo_details = []
+        algo_details_map = {}
+        for algo in st.session_state.get('online_experiment_list', []):
+            params_str = get_effective_algorithm_params(algo)
+            name = algo.get('name', '')
+            display_name = algo.get('display_name', name)
+            cat = algo.get('category', '—')
+            
+            entry = {"Алгоритм": display_name, "Категория": cat, "Параметры": params_str}
+            algo_details.append(entry)
+            algo_details_map[name] = {"category": cat, "params_str": params_str}
+            algo_details_map[display_name] = {"category": cat, "params_str": params_str}
+
+        results_df = format_results_table(all_results, s)
+
+        # Расширенная палитра (Alphabet = 26 цветов + Light24 = 24 цвета, итого 50)
+        extended_colorway = px.colors.qualitative.Alphabet + px.colors.qualitative.Light24
+        t_range = np.arange(1, s + 1)
+
+        # Графики
+        fig_cum = go.Figure()
+        for name, data in all_results.items():
+            if 'cumulative_regret_mean' in data:
+                fig_cum.add_trace(go.Scatter(x=t_range[:len(data['cumulative_regret_mean'])], y=data['cumulative_regret_mean'],
+                                        name=name, mode='lines', line=dict(width=2)))
+        fig_cum.update_layout(title="Cumulative Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500, colorway=extended_colorway)
+
+        fig_cum_log = go.Figure(fig_cum)
+        fig_cum_log.update_layout(title="Cumulative Regret (Log Scale)", yaxis_type="log", colorway=extended_colorway)
+
+        fig_avg = go.Figure()
+        for name, data in all_results.items():
+            if 'average_regret_mean' in data:
+                fig_avg.add_trace(go.Scatter(x=t_range[:len(data['average_regret_mean'])], y=data['average_regret_mean'],
+                                         name=name, mode='lines', line=dict(width=2)))
+        fig_avg.update_layout(title="Average Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500, colorway=extended_colorway)
+
+        fig_avg_log = go.Figure(fig_avg)
+        fig_avg_log.update_layout(title="Average Regret (Log Scale)", yaxis_type="log", colorway=extended_colorway)
+
+        figures = [fig_cum, fig_cum_log, fig_avg, fig_avg_log]
+
+        # --- Отображение на странице ---
+        st.subheader("📝 Детали эксперимента")
+        st.write(f"**Среда:** {env_name} | **Задержка:** {delay_desc} | **Шагов:** {s} | **Запусков:** {n_runs_saved}")
+
+        if algo_details:
+            st.table(pd.DataFrame(algo_details))
+
         errors = {name: data['error'] for name, data in all_results.items() if 'error' in data}
         if errors:
             with st.expander(f"⚠️ {len(errors)} алгоритм(ов) завершились с ошибкой", expanded=False):
                 for name, err in errors.items():
                     st.code(f"{name}: {err}")
-        
-        results_df = format_results_table(all_results, s)
+
         st.subheader("🏆 Leaderboard")
         st.dataframe(results_df, use_container_width=True, hide_index=True)
-        
-        # Расширенная палитра (Alphabet = 26 цветов + Light24 = 24 цвета, итого 50)
-        extended_colorway = px.colors.qualitative.Alphabet + px.colors.qualitative.Light24
 
         st.subheader("📈 Cumulative Regret")
-        fig = go.Figure()
-        t_range = np.arange(1, s + 1)
-        for name, data in all_results.items():
-            if 'cumulative_regret_mean' in data:
-                fig.add_trace(go.Scatter(x=t_range[:len(data['cumulative_regret_mean'])], y=data['cumulative_regret_mean'],
-                                        name=name, mode='lines', line=dict(width=2)))
-        fig.update_layout(title="Cumulative Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500, colorway=extended_colorway)
-        st.plotly_chart(fig, use_container_width=True)
-        
+        st.plotly_chart(fig_cum, use_container_width=True)
+
         st.subheader("📈 Cumulative Regret (Log Scale)")
-        fig_log = go.Figure(fig)
-        fig_log.update_layout(title="Cumulative Regret (Log Scale)", yaxis_type="log", colorway=extended_colorway)
-        st.plotly_chart(fig_log, use_container_width=True)
-        
+        st.plotly_chart(fig_cum_log, use_container_width=True)
+
         st.subheader("📉 Average Regret")
-        fig2 = go.Figure()
-        for name, data in all_results.items():
-            if 'average_regret_mean' in data:
-                fig2.add_trace(go.Scatter(x=t_range[:len(data['average_regret_mean'])], y=data['average_regret_mean'],
-                                         name=name, mode='lines', line=dict(width=2)))
-        fig2.update_layout(title="Average Regret", xaxis_title="Шаг", yaxis_title="Regret", height=500, colorway=extended_colorway)
-        st.plotly_chart(fig2, use_container_width=True)
-        
+        st.plotly_chart(fig_avg, use_container_width=True)
+
         st.subheader("📉 Average Regret (Log Scale)")
-        fig2_log = go.Figure(fig2)
-        fig2_log.update_layout(title="Average Regret (Log Scale)", yaxis_type="log", colorway=extended_colorway)
-        st.plotly_chart(fig2_log, use_container_width=True)
+        st.plotly_chart(fig_avg_log, use_container_width=True)
+
+        # --- Экспорт (по аналогии с Offline-режимом) ---
+        st.subheader("📥 Экспорт")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            online_csv = generate_online_csv_report(results_df, algo_details_map, env_name, delay_desc, s, n_runs_saved)
+            st.download_button(
+                "📊 Скачать CSV-отчёт",
+                online_csv,
+                f"online_benchmark_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                "text/csv",
+                use_container_width=True,
+                key="download_online_csv"
+            )
+        with c2:
+            online_txt = generate_online_text_report(env_name, delay_desc, s, n_runs_saved, algo_details, results_df)
+            st.download_button(
+                "📄 Скачать TXT-отчёт",
+                online_txt,
+                f"online_report_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                "text/plain",
+                use_container_width=True,
+                key="download_online_txt"
+            )
+        with c3:
+            online_pdf = generate_online_pdf_report(env_name, delay_desc, s, n_runs_saved, algo_details, results_df, all_results)
+            st.download_button(
+                "📕 Скачать PDF-отчёт",
+                online_pdf,
+                f"online_report_{env_name}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                "application/pdf",
+                use_container_width=True,
+                key="download_online_pdf",
+                help="Векторный PDF-отчёт со сводкой параметров, таблицей Leaderboard и всеми 4 графиками регрета."
+            )
 
 st.divider()
 st.caption(f"🎯 OPE Platform v0.4.0 | {datetime.now().year}")
