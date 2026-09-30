@@ -33,8 +33,8 @@ class GPUCBKernelFlexibleAlgorithm(BaseAlgorithm):
         self.y = []
 
     def rbf_kernel(self, X1, X2, lengthscale):
-        X1 = np.atleast_2d(X1)
-        X2 = np.atleast_2d(X2)
+        X1 = np.atleast_2d(X1).astype(np.float64)
+        X2 = np.atleast_2d(X2).astype(np.float64)
         dists = np.sum((X1[:, None, :] - X2[None, :, :]) ** 2, axis=2)
         return np.exp(-0.5 * dists / lengthscale**2)
 

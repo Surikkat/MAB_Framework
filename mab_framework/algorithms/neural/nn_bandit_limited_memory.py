@@ -294,7 +294,9 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
 
                     new_cov = self.make_positive_definite(new_cov)
                     self.cov[arm_idx] = new_cov
-                    self.precision_prior[arm_idx] = torch.linalg.inv(new_cov)
+                    self.precision_prior[arm_idx] = torch.linalg.inv(
+                        new_cov + self.epsilon * torch.eye(new_cov.shape[0])
+                    )
 
                     self.mu_prior[:, arm_idx] = self.dnn.fc3.weight[arm_idx].detach()
 
@@ -306,7 +308,9 @@ class NeuralBanditWithLimitedMemory_5(BaseAlgorithm):
                     self.precision[arm_idx] += F_mat.T @ F_mat
                     self.f[arm_idx] += F_mat.T @ R_vec
 
-                    self.cov[arm_idx] = torch.linalg.inv(self.precision[arm_idx])
+                    self.cov[arm_idx] = torch.linalg.inv(
+                        self.precision[arm_idx] + self.epsilon * torch.eye(self.precision[arm_idx].shape[0])
+                    )
                     prior_contrib = torch.mv(self.precision_prior[arm_idx], self.mu_prior[:, arm_idx])
                     self.mu[arm_idx] = torch.mv(self.cov[arm_idx], self.f[arm_idx] + prior_contrib)
 
