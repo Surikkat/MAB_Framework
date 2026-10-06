@@ -15,42 +15,42 @@ class CandidatePool:
         rule_based = pd.DataFrame([
             {
                 'name': 'Popular',
-                'description': 'Топ-10 популярных товаров',
+                'description': 'Top-10 popular items',
                 'category': '📏 Rule-based',
                 'complexity': '⭐',
                 'type': 'rule'
             },
             {
                 'name': 'Category Personalization',
-                'description': 'Товары из любимой категории',
+                'description': 'Items from favorite category',
                 'category': '📏 Rule-based',
                 'complexity': '⭐⭐',
                 'type': 'rule'
             },
             {
                 'name': 'Price Range Match',
-                'description': 'Цена ±30% от среднего чека',
+                'description': 'Price ±30% of average check',
                 'category': '📏 Rule-based',
                 'complexity': '⭐⭐',
                 'type': 'rule'
             },
             {
                 'name': 'High Rated',
-                'description': 'Товары с рейтингом > 4.5',
+                'description': 'Items with rating > 4.5',
                 'category': '📏 Rule-based',
                 'complexity': '⭐',
                 'type': 'rule'
             },
             {
                 'name': 'Device-Optimized',
-                'description': 'Дёшево на мобильных, дорого на десктопе',
+                'description': 'Cheap on mobile, expensive on desktop',
                 'category': '📏 Rule-based',
                 'complexity': '⭐⭐',
                 'type': 'rule'
             },
             {
                 'name': 'Random Baseline',
-                'description': 'Случайные рекомендации (нижняя граница)',
+                'description': 'Random recommendations (lower bound)',
                 'category': '📏 Rule-based',
                 'complexity': '⭐',
                 'type': 'rule'

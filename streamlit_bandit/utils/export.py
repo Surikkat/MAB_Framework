@@ -8,19 +8,19 @@ def generate_report(results, baseline_ctr, df_log):
 
     report = []
     report.append("=" * 60)
-    report.append("OPE PLATFORM — ОТЧЁТ ОБ ОЦЕНКЕ АЛГОРИТМОВ")
+    report.append("OPE PLATFORM — ALGORITHM EVALUATION REPORT")
     report.append("=" * 60)
-    report.append(f"Дата: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    report.append(f"Логов проанализировано: {len(df_log):,}")
-    report.append(f"Baseline CTR (продакшн): {baseline_ctr*100:.3f}%")
+    report.append(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    report.append(f"Logs Analyzed: {len(df_log):,}")
+    report.append(f"Baseline CTR (production): {baseline_ctr*100:.3f}%")
     report.append("")
 
     report.append("-" * 60)
-    report.append("РЕЗУЛЬТАТЫ ОЦЕНКИ")
+    report.append("EVALUATION RESULTS")
     report.append("-" * 60)
     
     for r in results:
-        report.append(f"\nКандидат: {r['candidate']}")
+        report.append(f"\nCandidate: {r['candidate']}")
         report.append(f"  Direct Method:     {r.get('dm_score', 0)*100:.4f}%")
         report.append(f"  IPS (clipped):     {r.get('ips_score', 0)*100:.4f}%")
         report.append(f"  Doubly Robust:     {r.get('dr_score', 0)*100:.4f}%")
@@ -32,32 +32,32 @@ def generate_report(results, baseline_ctr, df_log):
 
         ess = r.get('effective_sample_size', 0)
         if ess < 100:
-            report.append(f"  Надёжность:        🔴 Низкая (ESS < 100)")
+            report.append(f"  Reliability:       🔴 Low (ESS < 100)")
         elif ess < 1000:
-            report.append(f"  Надёжность:        🟡 Средняя (ESS < 1000)")
+            report.append(f"  Reliability:       🟡 Medium (ESS < 1000)")
         else:
-            report.append(f"  Надёжность:        🟢 Высокая (ESS > 1000)")
+            report.append(f"  Reliability:       🟢 High (ESS > 1000)")
 
     report.append("\n" + "-" * 60)
-    report.append("РЕКОМЕНДАЦИЯ")
+    report.append("RECOMMENDATION")
     report.append("-" * 60)
 
     best = max(results, key=lambda x: x.get('dr_score', 0))
     best_delta = (best['dr_score'] - baseline_ctr) / baseline_ctr * 100
     
     if best_delta > 1 and best['effective_sample_size'] > 1000:
-        report.append(f"✅ Рекомендуется к запуску: {best['candidate']}")
-        report.append(f"   Ожидаемый прирост CTR: +{best_delta:.1f}%")
+        report.append(f"✅ Recommended for launch: {best['candidate']}")
+        report.append(f"   Expected CTR increase: +{best_delta:.1f}%")
     elif best_delta > 0:
-        report.append(f"⚠️ Потенциальный кандидат: {best['candidate']}")
-        report.append(f"   Прирост небольшой: +{best_delta:.1f}%")
-        report.append(f"   Рекомендуется собрать больше данных")
+        report.append(f"⚠️ Potential candidate: {best['candidate']}")
+        report.append(f"   Minor increase: +{best_delta:.1f}%")
+        report.append(f"   More data collection recommended")
     else:
-        report.append(f"❌ Все кандидаты хуже продакшна")
-        report.append(f"   Лучший результат: {best['candidate']} ({best_delta:+.1f}%)")
+        report.append(f"❌ All candidates are worse than production")
+        report.append(f"   Best result: {best['candidate']} ({best_delta:+.1f}%)")
     
     report.append("\n" + "=" * 60)
-    report.append("КОНЕЦ ОТЧЁТА")
+    report.append("END OF REPORT")
     report.append("=" * 60)
 
     report_text = "\n".join(report)
@@ -75,8 +75,8 @@ def generate_csv_report(results):
 
 def get_effective_algorithm_params(algo_dict):
     """
-    Извлекает конкретные значения гиперпараметров алгоритма с учётом дефолтов из ALGO_HYPERPARAMS.
-    Никаких заглушек 'По умолчанию' — возвращает фактические значения (например, 'alpha=0.5, l2_reg=1.0').
+    Extracts specific hyperparameter values of the algorithm considering defaults from ALGO_HYPERPARAMS.
+    No 'Default' placeholders — returns the actual values (e.g., 'alpha=0.5, l2_reg=1.0').
     """
     from core.hyperparams import ALGO_HYPERPARAMS
     
@@ -98,70 +98,70 @@ def get_effective_algorithm_params(algo_dict):
         
     if effective:
         return ", ".join(f"{k}={v}" for k, v in effective.items())
-    return "нет параметров"
+    return "no parameters"
 
 
 def generate_online_csv_report(results_df, algo_details_map, env_name, delay_desc, steps, n_runs):
     """
-    Генерирует CSV с результатами онлайн-эксперимента, дополненный конкретными параметрами и свойствами среды.
+    Generates a CSV with the results of the online experiment, supplemented with specific parameters and environment properties.
     """
     df = results_df.copy()
-    df['Среда'] = env_name
-    df['Задержка'] = delay_desc
-    df['Шагов'] = steps
-    df['Запусков'] = n_runs
-    df['Категория'] = df['Алгоритм'].apply(lambda name: algo_details_map.get(name, {}).get('category', '—'))
-    df['Параметры'] = df['Алгоритм'].apply(lambda name: algo_details_map.get(name, {}).get('params_str', '—'))
+    df['Environment'] = env_name
+    df['Delay'] = delay_desc
+    df['Steps'] = steps
+    df['Runs'] = n_runs
+    df['Category'] = df['Algorithm'].apply(lambda name: algo_details_map.get(name, {}).get('category', '—'))
+    df['Parameters'] = df['Algorithm'].apply(lambda name: algo_details_map.get(name, {}).get('params_str', '—'))
     
-    ordered_cols = ['Алгоритм', 'Категория', 'Параметры', 'Cum. Regret', 'Avg Regret', 'Время (с)', 'Статус', 'Среда', 'Задержка', 'Шагов', 'Запусков']
+    ordered_cols = ['Algorithm', 'Category', 'Parameters', 'Cum. Regret', 'Avg Regret', 'Time (s)', 'Status', 'Environment', 'Delay', 'Steps', 'Runs']
     existing_cols = [c for c in ordered_cols if c in df.columns] + [c for c in df.columns if c not in ordered_cols]
     return df[existing_cols].to_csv(index=False)
 
 
 def generate_online_text_report(env_name, delay_desc, steps, n_runs, algo_details, results_df):
     """
-    Генерирует текстовый отчёт об онлайн-эксперименте (по аналогии с offline generate_report).
+    Generates a text report of the online experiment (similar to the offline generate_report).
     """
     output = BytesIO()
     report = []
     report.append("=" * 60)
-    report.append("MAB FRAMEWORK — ОТЧЁТ ОБ ОНЛАЙН-ЭКСПЕРИМЕНТЕ")
+    report.append("MAB FRAMEWORK — ONLINE EXPERIMENT REPORT")
     report.append("=" * 60)
-    report.append(f"Дата: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    report.append(f"Среда: {env_name}")
-    report.append(f"Задержка наград: {delay_desc}")
-    report.append(f"Количество шагов: {steps}")
-    report.append(f"Количество запусков (seeds): {n_runs}")
+    report.append(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    report.append(f"Environment: {env_name}")
+    report.append(f"Reward Delay: {delay_desc}")
+    report.append(f"Number of Steps (Horizon): {steps}")
+    report.append(f"Number of Runs (seeds): {n_runs}")
     report.append("")
     
     report.append("-" * 60)
-    report.append("ПАРАМЕТРЫ АЛГОРИТМОВ")
+    report.append("ALGORITHM PARAMETERS")
     report.append("-" * 60)
     for item in algo_details:
-        report.append(f"• {item['Алгоритм']} [{item['Категория']}]: {item['Параметры']}")
+        report.append(f"• {item['Algorithm']} [{item['Category']}]: {item['Parameters']}")
     report.append("")
     
     report.append("-" * 60)
-    report.append("ЛИДЕРБОРД И РЕЗУЛЬТАТЫ")
+    report.append("LEADERBOARD AND RESULTS")
     report.append("-" * 60)
     for idx, r in results_df.iterrows():
-        status = r.get('Статус', '—')
+        status = r.get('Status', '—')
         cum = r.get('Cum. Regret', 'N/A')
         avg = r.get('Avg Regret', 'N/A')
-        t = r.get('Время (с)', 'N/A')
-        report.append(f"#{idx+1} {r['Алгоритм']}: Cum.Regret = {cum}, Avg.Regret = {avg}, Время = {t}s [{status}]")
+        t = r.get('Time (s)', 'N/A')
+        report.append(f"#{idx+1} {r['Algorithm']}: Cum.Regret = {cum}, Avg.Regret = {avg}, Time = {t}s [{status}]")
     report.append("")
     
-    successful = results_df[results_df['Статус'].str.contains('Успех', na=False)]
+    successful = results_df[results_df['Status'].str.contains('Success', na=False)]
     if not successful.empty:
         best = successful.iloc[0]
         report.append("-" * 60)
-        report.append("ЛУЧШИЙ АЛГОРИТМ")
+        report.append("BEST PERFORMING ALGORITHM")
         report.append("-" * 60)
-        report.append(f"🏆 Победитель: {best['Алгоритм']} (наименьший кумулятивный регрет: {best['Cum. Regret']})")
+        report.append(f"🏆 Winner: {best['Algorithm']} (lowest cumulative regret: {best['Cum. Regret']})")
     
     report.append("\n" + "=" * 60)
-    report.append("КОНЕЦ ОТЧЁТА")
+    report.append("END OF REPORT")
     report.append("=" * 60)
     
     report_text = "\n".join(report)
@@ -172,8 +172,8 @@ def generate_online_text_report(env_name, delay_desc, steps, n_runs, algo_detail
 
 def generate_online_html_report(env_name, delay_desc, steps, n_runs, algo_details, results_df, figures):
     """
-    Генерирует автономную HTML-страницу отчёта со всеми графиками, параметрами и лидербордом.
-    Включает интерактивные графики Plotly (CDN). Открывается в любом браузере.
+    Generates an autonomous HTML report page with all charts, parameters, and leaderboard.
+    Includes interactive Plotly charts (CDN). Can be opened in any browser.
     """
     output = BytesIO()
     
@@ -183,7 +183,7 @@ def generate_online_html_report(env_name, delay_desc, steps, n_runs, algo_detail
         
     table_rows = []
     for item in algo_details:
-        table_rows.append(f"<tr><td><b>{item['Алгоритм']}</b></td><td>{item['Категория']}</td><td><code>{item['Параметры']}</code></td></tr>")
+        table_rows.append(f"<tr><td><b>{item['Algorithm']}</b></td><td>{item['Category']}</td><td><code>{item['Parameters']}</code></td></tr>")
     algo_table = "".join(table_rows)
     
     results_headers = "".join(f"<th>{c}</th>" for c in results_df.columns)
@@ -194,10 +194,10 @@ def generate_online_html_report(env_name, delay_desc, steps, n_runs, algo_detail
     results_table = "".join(results_rows)
     
     html = f"""<!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Отчёт об онлайн-эксперименте — {env_name}</title>
+    <title>Online Experiment Report — {env_name}</title>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -267,23 +267,23 @@ def generate_online_html_report(env_name, delay_desc, steps, n_runs, algo_detail
 </head>
 <body>
 <div class="container">
-    <h1>📊 Отчёт об онлайн-эксперименте</h1>
+    <h1>📊 Online Experiment Report</h1>
     
     <div class="meta-box">
-        <h3>Параметры эксперимента</h3>
+        <h3>Experiment Parameters</h3>
         <div class="meta-grid">
-            <div class="meta-item">Среда:<strong>{env_name}</strong></div>
-            <div class="meta-item">Задержка:<strong>{delay_desc}</strong></div>
-            <div class="meta-item">Шагов:<strong>{steps}</strong></div>
-            <div class="meta-item">Запусков (Seeds):<strong>{n_runs}</strong></div>
-            <div class="meta-item">Дата:<strong>{datetime.now().strftime('%Y-%m-%d %H:%M')}</strong></div>
+            <div class="meta-item">Environment:<strong>{env_name}</strong></div>
+            <div class="meta-item">Delay:<strong>{delay_desc}</strong></div>
+            <div class="meta-item">Steps:<strong>{steps}</strong></div>
+            <div class="meta-item">Runs (Seeds):<strong>{n_runs}</strong></div>
+            <div class="meta-item">Date:<strong>{datetime.now().strftime('%Y-%m-%d %H:%M')}</strong></div>
         </div>
     </div>
 
-    <h2>📝 Параметры алгоритмов</h2>
+    <h2>📝 Algorithm Parameters</h2>
     <table>
         <thead>
-            <tr><th>Алгоритм</th><th>Категория</th><th>Точные параметры</th></tr>
+            <tr><th>Algorithm</th><th>Category</th><th>Exact Parameters</th></tr>
         </thead>
         <tbody>
             {algo_table}
@@ -300,7 +300,7 @@ def generate_online_html_report(env_name, delay_desc, steps, n_runs, algo_detail
         </tbody>
     </table>
 
-    <h2>📈 Графики</h2>
+    <h2>📈 Charts</h2>
     {"".join(f'<div class="chart-box">{c}</div>' for c in charts_html)}
 </div>
 </body>
@@ -312,12 +312,12 @@ def generate_online_html_report(env_name, delay_desc, steps, n_runs, algo_detail
 
 def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details, results_df, all_results):
     """
-    Генерирует многостраничный векторный PDF-отчёт об онлайн-эксперименте через Matplotlib PdfPages.
-    Адаптивная вёрстка:
-    - До 10 алгоритмов: Страница 1 (Leaderboard + Параметры), Страница 2 (4 графика 2x2).
-    - Более 10 алгоритмов (до 30+): Страница 1 (Leaderboard), Страница 2 (Параметры), Страница 3 (4 графика 2x2).
-    - Палитра из 60 уникальных цветов (tab20 + tab20b + tab20c).
-    - Полная очистка эмодзи во избежание пустых квадратов в шрифте DejaVu Sans.
+    Generates a multi-page vector PDF report of the online experiment via Matplotlib PdfPages.
+    Adaptive layout:
+    - Up to 10 algorithms: Page 1 (Leaderboard + Parameters), Page 2 (4 charts 2x2).
+    - More than 10 algorithms (up to 30+): Page 1 (Leaderboard), Page 2 (Parameters), Page 3 (4 charts 2x2).
+    - Palette of 60 unique colors (tab20 + tab20b + tab20c).
+    - Full emoji cleanup to avoid empty squares in DejaVu Sans font.
     """
     import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
@@ -326,7 +326,7 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
 
     output = BytesIO()
 
-    # 60 уникальных различимых цветов из палитр Matplotlib tab20, tab20b, tab20c
+    # 60 unique distinguishable colors from Matplotlib palettes tab20, tab20b, tab20c
     colors = [
         *plt.cm.tab20.colors,
         *plt.cm.tab20b.colors,
@@ -335,18 +335,18 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
 
     clean_delay = delay_desc.replace("🎲", "").replace("⏱️", "").replace("🟢", "").strip()
     date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    meta_str = f"Среда: {env_name}   |   Задержка: {clean_delay}   |   Шагов: {steps}   |   Запусков: {n_runs}   |   Дата: {date_str}"
+    meta_str = f"Environment: {env_name}   |   Delay: {clean_delay}   |   Steps: {steps}   |   Runs: {n_runs}   |   Date: {date_str}"
 
-    # Очищаем таблицу результатов от эмодзи для избежания пустых глифов
+    # Clean the results table from emojis to avoid missing glyphs
     clean_df = results_df.copy()
-    if 'Статус' in clean_df.columns:
-        clean_df['Статус'] = clean_df['Статус'].astype(str).str.replace('✅', '[OK]').str.replace('❌', '[Err]')
+    if 'Status' in clean_df.columns:
+        clean_df['Status'] = clean_df['Status'].astype(str).str.replace('✅', '[OK]').str.replace('❌', '[Err]')
 
-    # Очищаем параметры и категории от эмодзи
+    # Clean parameters and categories from emojis
     clean_p_rows = []
     for a in algo_details:
-        cat_clean = re.sub(r'[^\w\s\(\)\-\.,/]', '', str(a.get('Категория', ''))).strip()
-        clean_p_rows.append([a['Алгоритм'], cat_clean, a['Параметры']])
+        cat_clean = re.sub(r'[^\w\s\(\)\-\.,/]', '', str(a.get('Category', ''))).strip()
+        clean_p_rows.append([a['Algorithm'], cat_clean, a['Parameters']])
 
     n_algos = len(all_results)
     multi_page_tables = len(clean_p_rows) > 10
@@ -354,19 +354,19 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
     with PdfPages(output) as pdf:
         if not multi_page_tables:
             # ----------------------------------------------------
-            # ОДНА СТРАНИЦА ДЛЯ ОБЕИХ ТАБЛИЦ (до 10 алгоритмов)
+            # ONE PAGE FOR BOTH TABLES (up to 10 algorithms)
             # ----------------------------------------------------
             fig = plt.figure(figsize=(11.69, 8.27))
             ax = fig.add_axes([0.06, 0.05, 0.88, 0.84])
             ax.axis('off')
 
-            plt.suptitle("Отчёт об онлайн-эксперименте (MAB Framework)", fontsize=15, fontweight='bold', y=0.96)
+            plt.suptitle("Online Experiment Report (MAB Framework)", fontsize=15, fontweight='bold', y=0.96)
             ax.text(0.5, 0.98, meta_str, fontsize=9, ha='center', va='top', transform=ax.transAxes,
                     bbox=dict(boxstyle='round,pad=0.4', facecolor='#f1f5f9', edgecolor='#cbd5e1'))
 
             cur_y = 0.90
-            # Таблица 1: Leaderboard
-            ax.text(0.0, cur_y, "Таблица лидеров (Leaderboard)", fontsize=11, fontweight='bold', va='top', transform=ax.transAxes)
+            # Table 1: Leaderboard
+            ax.text(0.0, cur_y, "Leaderboard", fontsize=11, fontweight='bold', va='top', transform=ax.transAxes)
             cur_y -= 0.035
 
             n_rows_lead = len(clean_df)
@@ -385,13 +385,13 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
 
             cur_y -= (t1_height + 0.06)
 
-            # Таблица 2: Параметры
-            ax.text(0.0, cur_y, "Параметры алгоритмов", fontsize=11, fontweight='bold', va='top', transform=ax.transAxes)
+            # Table 2: Parameters
+            ax.text(0.0, cur_y, "Algorithm Parameters", fontsize=11, fontweight='bold', va='top', transform=ax.transAxes)
             cur_y -= 0.035
 
             n_rows_params = len(clean_p_rows)
             t2_height = min(cur_y - 0.02, 0.045 + n_rows_params * 0.038)
-            t2 = ax.table(cellText=clean_p_rows, colLabels=['Алгоритм', 'Категория', 'Точные гиперпараметры'],
+            t2 = ax.table(cellText=clean_p_rows, colLabels=['Algorithm', 'Category', 'Exact Hyperparameters'],
                           colWidths=[0.22, 0.20, 0.58],
                           bbox=[0.0, cur_y - t2_height, 1.0, t2_height], cellLoc='left')
             t2.auto_set_font_size(False)
@@ -409,17 +409,17 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
 
         else:
             # ----------------------------------------------------
-            # ДВЕ СТРАНИЦЫ ДЛЯ ТАБЛИЦ (если алгоритмов > 10, до 30+)
+            # TWO PAGES FOR TABLES (if algorithms > 10, up to 30+)
             # ----------------------------------------------------
-            # Страница 1: Leaderboard
+            # Page 1: Leaderboard
             fig1 = plt.figure(figsize=(11.69, 8.27))
             ax1 = fig1.add_axes([0.06, 0.08, 0.88, 0.80])
             ax1.axis('off')
-            plt.suptitle("Отчёт об онлайн-эксперименте (MAB Framework)", fontsize=15, fontweight='bold', y=0.96)
+            plt.suptitle("Online Experiment Report (MAB Framework)", fontsize=15, fontweight='bold', y=0.96)
             ax1.text(0.5, 0.98, meta_str, fontsize=9, ha='center', va='top', transform=ax1.transAxes,
                      bbox=dict(boxstyle='round,pad=0.4', facecolor='#f1f5f9', edgecolor='#cbd5e1'))
 
-            ax1.text(0.0, 0.90, "Таблица лидеров (Leaderboard)", fontsize=11, fontweight='bold', va='top', transform=ax1.transAxes)
+            ax1.text(0.0, 0.90, "Leaderboard", fontsize=11, fontweight='bold', va='top', transform=ax1.transAxes)
             n_rows = len(clean_df)
             t_height = min(0.80, 0.045 + n_rows * 0.026)
             f_size = 7.5 if n_rows > 20 else 8.5
@@ -437,16 +437,16 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
             pdf.savefig(fig1)
             plt.close(fig1)
 
-            # Страница 2: Параметры алгоритмов
+            # Page 2: Algorithm Parameters
             fig2 = plt.figure(figsize=(11.69, 8.27))
             ax2 = fig2.add_axes([0.06, 0.08, 0.88, 0.84])
             ax2.axis('off')
-            plt.suptitle("Параметры алгоритмов", fontsize=15, fontweight='bold', y=0.96)
+            plt.suptitle("Algorithm Parameters", fontsize=15, fontweight='bold', y=0.96)
 
             n_rows_p = len(clean_p_rows)
             t_height_p = min(0.85, 0.045 + n_rows_p * 0.026)
             f_size_p = 7.5 if n_rows_p > 20 else 8.5
-            t2 = ax2.table(cellText=clean_p_rows, colLabels=['Алгоритм', 'Категория', 'Точные гиперпараметры'],
+            t2 = ax2.table(cellText=clean_p_rows, colLabels=['Algorithm', 'Category', 'Exact Hyperparameters'],
                            colWidths=[0.22, 0.20, 0.58],
                            bbox=[0.0, 0.92 - t_height_p, 1.0, t_height_p], cellLoc='left')
             t2.auto_set_font_size(False)
@@ -462,13 +462,13 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
             plt.close(fig2)
 
         # ----------------------------------------------------
-        # СТРАНИЦА ГРАФИКОВ: 4 графика регрета (сетка 2x2)
+        # CHART PAGE: 4 regret charts (2x2 grid)
         # ----------------------------------------------------
         fig_plots, axes = plt.subplots(2, 2, figsize=(11.69, 8.27))
         (ax_cum, ax_cum_log), (ax_avg, ax_avg_log) = axes
         t_range = np.arange(1, steps + 1)
 
-        # Динамическая колоночность и размер шрифта легенды под 30+ алгоритмов
+        # Dynamic legend columns and font size for 30+ algorithms
         leg_cols = 3 if n_algos > 16 else (2 if n_algos > 8 else 1)
         leg_font = 6.5 if n_algos > 16 else (7.5 if n_algos > 8 else 8.5)
 
@@ -495,14 +495,14 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
             (ax_avg_log, "Average Regret (Log Scale)", True)
         ]:
             ax_p.set_title(title, fontsize=10.5, fontweight='bold')
-            ax_p.set_xlabel("Шаг", fontsize=8.5)
+            ax_p.set_xlabel("Step", fontsize=8.5)
             ax_p.set_ylabel("Regret", fontsize=8.5)
             if is_log:
                 ax_p.set_yscale('log')
             ax_p.grid(True, linestyle='--', alpha=0.4)
             ax_p.legend(fontsize=leg_font, ncol=leg_cols, loc='best')
 
-        plt.suptitle("Графики регрета онлайн-эксперимента", fontsize=14, fontweight='bold', y=0.98)
+        plt.suptitle("Regret Curves for Online Experiment", fontsize=14, fontweight='bold', y=0.98)
         plt.tight_layout(rect=[0, 0.02, 1, 0.95])
 
         pdf.savefig(fig_plots)

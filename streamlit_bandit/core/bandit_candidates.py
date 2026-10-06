@@ -36,7 +36,7 @@ from mab_framework.algorithms.neural.nn_ts_b import NNTSBAlgorithm
 from mab_framework.algorithms.neural.nn_bandit_limited_memory import NeuralBanditWithLimitedMemory_5
 from mab_framework.algorithms.neural.pfn_ts import PFNTSAlgorithm
 
-# ВСЕ МОДЕЛИ
+# ALL MODELS
 from mab_framework.models.tabicl_model import TabICLRegressorPPD
 from mab_framework.models.linear_model import OnlineRidgeRegression
 from mab_framework.models.gp_rff_model import GPRFFModel
@@ -394,7 +394,7 @@ class BanditCandidatePool:
             },
             {
                 'name': 'PFN-TS (Adaptive TabICL)',
-                'description': 'Thompson Sampling через Universal Subsampling CLT (PFN TabICL)',
+                'description': 'Thompson Sampling via Universal Subsampling CLT (PFN TabICL)',
                 'category': '🧠 Neural',
                 'complexity': '⭐⭐⭐⭐⭐',
                 'wrapper': BanditCandidateWrapper(
@@ -405,7 +405,7 @@ class BanditCandidatePool:
                 )
             },
             
-            # SPECIAL — 5 алгоритмов
+            # SPECIAL — 5 algorithms
             {
                 'name': 'FGTS',
                 'description': 'Fast Greedy Thompson Sampling',

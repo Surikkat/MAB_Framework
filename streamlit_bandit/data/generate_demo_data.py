@@ -4,11 +4,11 @@ from pathlib import Path
 
 Path("data").mkdir(exist_ok=True)
 
-print("Генерация e-commerce логов...")
+print("Generating e-commerce logs...")
 import sys
 sys.path.append('..')
 
-print("Генерация финансовых логов...")
+print("Generating finance logs...")
 
 def generate_finance_logs(n_samples=50000):
     np.random.seed(42)
@@ -47,7 +47,7 @@ def generate_finance_logs(n_samples=50000):
     
     return df
 
-print("Генерация рекламных логов...")
+print("Generating ads logs...")
 
 def generate_ads_logs(n_samples=75000):
     np.random.seed(42)
@@ -100,11 +100,11 @@ if __name__ == "__main__":
     df_fin = generate_finance_logs()
     fin_path = data_dir / "finance_demo.parquet"
     df_fin.to_parquet(fin_path, index=False)
-    print(f"✅ Сохранено: {fin_path} ({len(df_fin):,} строк)")
+    print(f"✅ Saved: {fin_path} ({len(df_fin):,} rows)")
 
     df_ads = generate_ads_logs()
     ads_path = data_dir / "ads_demo.parquet"
     df_ads.to_parquet(ads_path, index=False)
-    print(f"✅ Сохранено: {ads_path} ({len(df_ads):,} строк)")
+    print(f"✅ Saved: {ads_path} ({len(df_ads):,} rows)")
 
-print("✅ Демо-данные готовы!")
+print("✅ Demo data is ready!")

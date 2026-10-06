@@ -16,14 +16,14 @@ from mab_framework.experiment.runner import ExperimentRunner
 
 
 def get_available_environments():
-    """Возвращает список доступных сред"""
+    """Returns a list of available environments"""
     envs = [
-        # === СИНТЕТИКА ===
+        # === SYNTHETIC ===
         {
             'name': 'Linear Synthetic',
             'id': 'synthetic_linear',
             'type': 'synthetic',
-            'description': 'Линейная среда: r = <θ_a, x> + шум',
+            'description': 'Linear environment: r = <θ_a, x> + noise',
             'env_class': 'SyntheticLinearEnv',
             'default_params': {'n_arms': 10, 'context_dim': 5, 'noise_std': 0.1},
             'n_arms': 10,
@@ -32,7 +32,7 @@ def get_available_environments():
             'name': 'GLM Synthetic',
             'id': 'synthetic_glm',
             'type': 'synthetic',
-            'description': 'Логистическая среда: P(r=1) = σ(<θ_a, x>)',
+            'description': 'Logistic environment: P(r=1) = σ(<θ_a, x>)',
             'env_class': 'SyntheticGLMEnv',
             'default_params': {'n_arms': 10, 'context_dim': 5},
             'n_arms': 10,
@@ -41,7 +41,7 @@ def get_available_environments():
             'name': 'Neural Synthetic',
             'id': 'synthetic_neural',
             'type': 'synthetic',
-            'description': 'Нелинейная среда: r = MLP(x) с ReLU',
+            'description': 'Non-linear environment: r = MLP(x) with ReLU',
             'env_class': 'SyntheticNeuralEnv',
             'default_params': {'n_arms': 10, 'context_dim': 5, 'hidden_dim': 32, 'noise_std': 0.1},
             'n_arms': 10,
@@ -50,7 +50,7 @@ def get_available_environments():
             'name': 'Non-contextual Synthetic',
             'id': 'synthetic_noncontextual',
             'type': 'synthetic',
-            'description': 'Безконтекстная среда: у каждой руки фиксированное среднее',
+            'description': 'Non-contextual environment: each arm has a fixed mean',
             'env_class': 'SyntheticNonContextualEnv',
             'default_params': {'n_arms': 10, 'context_dim': 1, 'noise_std': 1.0},
             'n_arms': 10,
@@ -60,7 +60,7 @@ def get_available_environments():
             'name': 'Mushrooms',
             'id': 'mushrooms',
             'type': 'real',
-            'description': 'Классификация грибов (съедобный/ядовитый)',
+            'description': 'Mushroom classification (edible/poisonous)',
             'env_class': 'DatasetEnvironment',
             'default_params': {
                 'dataset_path': str(MAB_PATH / 'mab_framework/data/mushroom_bandit_5000.csv'),
@@ -71,7 +71,7 @@ def get_available_environments():
             'name': 'MovieLens 100K',
             'id': 'movielens',
             'type': 'real',
-            'description': 'Реальные данные рекомендаций фильмов',
+            'description': 'Real movie recommendation data',
             'env_class': 'DatasetEnvironment',
             'default_params': {
                 'dataset_path': str(MAB_PATH / 'mab_framework/data/movielens_bandit_5000.csv'),
@@ -83,7 +83,7 @@ def get_available_environments():
 
 
 def get_available_algorithms_for_online():
-    """Возвращает алгоритмы, готовые для онлайн-запуска"""
+    """Returns algorithms ready for online execution"""
     algorithms = [
         {
             'name': 'Epsilon-Greedy',
@@ -318,7 +318,7 @@ def get_available_algorithms_for_online():
 
 
 def make_algo_factory(algo_row, n_arms, feature_dim):
-    """Создаёт фабрику алгоритмов для ExperimentRunner"""
+    """Creates an algorithm factory for ExperimentRunner"""
     def factory():
         AlgoClass = getattr(algorithms, algo_row['algo_name'])
         init_params = AlgoClass.__init__.__code__.co_varnames
@@ -357,7 +357,7 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
         if 'horizon_T' in init_params:
             a_params.setdefault('horizon_T', 2000)
 
-        # Автоподстановка размерности
+        # Dimension auto-substitution
         if 'theta_dim' in init_params:
             a_params.setdefault('theta_dim', 0)
         if 'x_dim' in init_params:
@@ -367,7 +367,7 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
                 a_params.setdefault(key, feature_dim)
                 break
         
-        # Фильтрация невалидных параметров (важно!)
+        # Filtering invalid parameters (important!)
         valid_keys = set(init_params)
         a_params = {k: v for k, v in a_params.items() if k in valid_keys}
         
@@ -379,19 +379,19 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
 
 
 def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n_runs=3, progress_callback=None):
-    """Запускает онлайн-эксперимент и возвращает результаты"""
+    """Runs an online experiment and returns the results"""
     
     if env_params is None:
         env_params = env_row.get('default_params', {})
     
-    # Создаём среду
+    # Create environment
     EnvClass = getattr(environments, env_row['env_class'])
     env = EnvClass(**env_params)
     
-    # n_arms из среды (приоритет) или из env_row
+    # n_arms from environment (priority) or from env_row
     n_arms = getattr(env, 'n_arms', None) or env_row.get('n_arms') or 10
     
-    # feature_dim из первого контекста
+    # feature_dim from the first context
     feature_dim = None
     try:
         sample_context = env.get_context()
@@ -404,7 +404,7 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
     if feature_dim is None:
         feature_dim = getattr(env, 'context_dim', 5)
     
-    # Ограничение шагов
+    # Step limit
     env_T = getattr(env, 'T', None)
     if env_T is not None and steps > env_T:
         steps = env_T
@@ -415,7 +415,7 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
         algo_name = algo_row.get('name', algo_row.get('display_name', 'unknown'))
         
         if progress_callback:
-            progress_callback(f"Запуск: {algo_name}...")
+            progress_callback(f"Running: {algo_name}...")
         
         algo_factory = make_algo_factory(algo_row, n_arms, feature_dim)
         
@@ -438,16 +438,16 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
 
 
 def format_results_table(all_results, steps):
-    """Форматирует результаты в таблицу"""
+    """Formats the results into a table"""
     rows = []
     for name, data in all_results.items():
         if 'error' in data:
             rows.append({
-                'Алгоритм': name,
+                'Algorithm': name,
                 'Cum. Regret': float('nan'),
                 'Avg Regret': float('nan'),
-                'Время (с)': float('nan'),
-                'Статус': '❌ Ошибка'
+                'Time (s)': float('nan'),
+                'Status': '❌ Error'
             })
         else:
             cum = data.get('cumulative_regret_mean', [0])
@@ -455,11 +455,11 @@ def format_results_table(all_results, steps):
             times = data.get('times_mean', [0])
             
             rows.append({
-                'Алгоритм': name,
+                'Algorithm': name,
                 'Cum. Regret': round(cum[-1], 2) if len(cum) > 0 else float('nan'),
                 'Avg Regret': round(avg[-1], 4) if len(avg) > 0 else float('nan'),
-                'Время (с)': round(sum(times), 2) if len(times) > 0 else float('nan'),
-                'Статус': '✅ Успех'
+                'Time (s)': round(sum(times), 2) if len(times) > 0 else float('nan'),
+                'Status': '✅ Success'
             })
     
     df = pd.DataFrame(rows)
