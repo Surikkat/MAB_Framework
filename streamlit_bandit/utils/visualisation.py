@@ -8,7 +8,7 @@ def plot_candidate_comparison(results, baseline_ctr):
     fig = go.Figure()
 
     fig.add_hline(y=baseline_ctr*100, line_dash="dash", 
-                  line_color="gray", annotation_text="Продакшн")
+                  line_color="gray", annotation_text="Production")
 
     fig.add_trace(go.Bar(
         x=df['candidate'],
@@ -20,7 +20,7 @@ def plot_candidate_comparison(results, baseline_ctr):
     ))
     
     fig.update_layout(
-        title="CTR кандидатов (Doubly Robust)",
+        title="Candidates CTR (Doubly Robust)",
         yaxis_title="CTR (%)",
         showlegend=False,
         height=400
@@ -41,7 +41,7 @@ def plot_effective_sample_size(results):
     ))
     
     fig.add_hline(y=1000, line_dash="dash", 
-                  line_color="orange", annotation_text="Минимум")
+                  line_color="orange", annotation_text="Minimum")
     
     fig.update_layout(
         title="Effective Sample Size",
@@ -75,7 +75,7 @@ def plot_method_agreement(results):
         ))
     
     fig.update_layout(
-        title="Согласованность методов оценки",
+        title="Evaluation Methods Consistency",
         yaxis_title="CTR (%)",
         height=400
     )

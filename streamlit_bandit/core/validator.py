@@ -30,81 +30,81 @@ class LogValidator:
         
         if missing_required:
             is_valid = False
-            warnings.append(f"❌ Отсутствуют обязательные колонки: {missing_required}")
+            warnings.append(f"❌ Missing required columns: {missing_required}")
             return is_valid, warnings
 
         if len(df) == 0:
             is_valid = False
-            warnings.append("❌ Датафрейм пуст")
+            warnings.append("❌ Dataframe is empty")
             return is_valid, warnings
 
         if not pd.api.types.is_numeric_dtype(df['propensity']):
-            warnings.append("❌ Колонка 'propensity' должна быть числовой")
+            warnings.append("❌ Column 'propensity' must be numeric")
             is_valid = False
         
         if not pd.api.types.is_numeric_dtype(df['reward']):
-            warnings.append("❌ Колонка 'reward' должна быть числовой")
+            warnings.append("❌ Column 'reward' must be numeric")
             is_valid = False
 
         if df['propensity'].min() <= 0:
-            warnings.append("⚠️ Обнаружены нулевые или отрицательные propensity. Они будут заменены на min_propensity")
+            warnings.append("⚠️ Zero or negative propensity detected. They will be replaced by min_propensity")
         
         if df['propensity'].max() > 1.0:
-            warnings.append("⚠️ Обнаружены propensity > 1.0. Они будут обрезаны")
+            warnings.append("⚠️ Propensity > 1.0 detected. They will be clipped")
         
         very_low_propensity = (df['propensity'] < 0.001).mean()
         if very_low_propensity > 0.5:
-            warnings.append(f"⚠️ {very_low_propensity*100:.1f}% записей имеют propensity < 0.001. OPE будет нестабильной")
+            warnings.append(f"⚠️ {very_low_propensity*100:.1f}% records have propensity < 0.001. OPE will be unstable")
 
         if df['reward'].nunique() == 1:
-            warnings.append("⚠️ Все reward одинаковые. Модель не сможет обучиться")
+            warnings.append("⚠️ All rewards are identical. Model will not be able to train")
         
         if df['reward'].mean() == 0:
-            warnings.append("⚠️ Нулевой средний reward. Проверьте данные")
+            warnings.append("⚠️ Zero average reward. Check data")
         
         if df['reward'].mean() > 0.5:
-            warnings.append(f"⚠️ Очень высокий CTR: {df['reward'].mean()*100:.1f}%. Возможно, данные сгенерированы искусственно")
+            warnings.append(f"⚠️ Very high CTR: {df['reward'].mean()*100:.1f}%. Data might be artificially generated")
 
         if len(df) < 1000:
-            warnings.append("⚠️ Слишком мало данных (<1000 записей). Оценки будут неточными")
+            warnings.append("⚠️ Too little data (<1000 records). Estimates will be inaccurate")
         
         if len(df) < 10000:
-            warnings.append(f"💡 Всего {len(df)} записей. Рекомендуется минимум 10K для стабильной оценки")
+            warnings.append(f"💡 Only {len(df)} records. Minimum 10K is recommended for stable estimation")
 
         n_unique_actions = df['item_id'].nunique()
         if n_unique_actions < 3:
-            warnings.append(f"⚠️ Всего {n_unique_actions} уникальных действий. Слишком мало для сравнения политик")
+            warnings.append(f"⚠️ Only {n_unique_actions} unique actions. Too few for policy comparison")
 
         missing_recommended = [col for col in self.RECOMMENDED_COLUMNS if col not in df.columns]
         if missing_recommended:
-            warnings.append(f"💡 Отсутствуют рекомендуемые колонки: {missing_recommended}. Direct Method будет работать хуже")
+            warnings.append(f"💡 Missing recommended columns: {missing_recommended}. Direct Method will perform worse")
 
         n_duplicates = df.duplicated().sum()
         if n_duplicates > 0:
-            warnings.append(f"💡 Найдено {n_duplicates} дубликатов. Рекомендуется их удалить")
+            warnings.append(f"💡 Found {n_duplicates} duplicates. It is recommended to remove them")
  
         if 'is_exploration' in df.columns:
             exploration_rate = df['is_exploration'].mean()
             if exploration_rate < 0.05:
-                warnings.append(f"⚠️ Exploration всего {exploration_rate*100:.1f}%. OPE для новых политик будет неточной")
+                warnings.append(f"⚠️ Exploration is only {exploration_rate*100:.1f}%. OPE for new policies will be inaccurate")
 
         n_missing = df[self.REQUIRED_COLUMNS].isnull().sum().sum()
         if n_missing > 0:
-            warnings.append(f"⚠️ Найдено {n_missing} пропусков в обязательных колонках")
+            warnings.append(f"⚠️ Found {n_missing} missing values in required columns")
 
         propensity_median = df['propensity'].median()
         if propensity_median < 0.05:
-            warnings.append("⚠️ Медианный propensity < 0.05. Exploration может быть недостаточным")
+            warnings.append("⚠️ Median propensity < 0.05. Exploration might be insufficient")
 
         propensity_std = df['propensity'].std()
         if propensity_std < 0.01:
-            warnings.append("💡 Очень маленькая дисперсия propensity. Возможно, политика почти детерминированная")
+            warnings.append("💡 Very small propensity variance. Policy might be almost deterministic")
 
         n_critical = sum(1 for w in warnings if w.startswith('❌'))
         n_warnings = sum(1 for w in warnings if w.startswith('⚠️'))
         
         if n_critical == 0 and n_warnings == 0:
-            warnings.append("✅ Данные выглядят хорошими для OPE!")
+            warnings.append("✅ Data looks good for OPE!")
         
         return is_valid, warnings
     

@@ -1,6 +1,6 @@
 """
-Реестр настраиваемых гиперпараметров для каждого алгоритма.
-Используется для генерации Streamlit-виджетов в Online и Offline режимах.
+Registry of tunable hyperparameters for each algorithm.
+Used to generate Streamlit widgets in Online and Offline modes.
 """
 import streamlit as st
 
@@ -254,7 +254,7 @@ ALGO_HYPERPARAMS = {
 
 
 def reset_hyperparams(unique_key: str):
-    """Сбрасывает виджеты гиперпараметров для данного unique_key к значениям по умолчанию."""
+    """Resets the hyperparameter widgets for the given unique_key to their default values."""
     old_ver = st.session_state.get(f"hp_ver_{unique_key}", 0)
     st.session_state[f"hp_ver_{unique_key}"] = old_ver + 1
 
@@ -267,14 +267,14 @@ def render_hyperparams(
     preset_model_params: dict = None
 ) -> dict:
     """
-    Рендерит Streamlit-виджеты для гиперпараметров алгоритма.
+    Renders Streamlit widgets for algorithm hyperparameters.
     
     Args:
-        algo_display_name: Отображаемое имя (например 'Exact GP')
-        algo_class_name: Имя класса алгоритма (например 'ThompsonSampling')
-        unique_key: Уникальный ключ для Streamlit виджетов
-        preset_algo_params: Дефолтные параметры алгоритма из конфига
-        preset_model_params: Дефолтные параметры модели из конфига
+        algo_display_name: Display name (e.g. 'Exact GP')
+        algo_class_name: Algorithm class name (e.g. 'ThompsonSampling')
+        unique_key: Unique key for Streamlit widgets
+        preset_algo_params: Default algorithm parameters from config
+        preset_model_params: Default model parameters from config
     """
     preset_algo_params = preset_algo_params or {}
     preset_model_params = preset_model_params or {}
