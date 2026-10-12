@@ -477,6 +477,10 @@ else:
         env_row = synthetic_envs[synthetic_envs['name'] == selected_env].iloc[0]
         
         with st.expander("⚙️ Environment settings", expanded=True):
+            info_text = env_row.get('info_text', None)
+            if isinstance(info_text, str) and info_text.strip():
+                st.info(info_text)
+
             default_params = env_row.get('default_params', {})
             
             c1, c2, c3 = st.columns(3)
@@ -497,9 +501,9 @@ else:
             with c3:
                 noise_std = st.slider(
                     "Noise level (noise_std):",
-                    min_value=0.01, max_value=1.0,
-                    value=default_params.get('noise_std', 0.1),
-                    step=0.01,
+                    min_value=0.0, max_value=1.0,
+                    value=float(default_params.get('noise_std', 0.1)),
+                    step=0.005,
                     key="env_noise_std"
                 )
             
@@ -508,6 +512,32 @@ else:
                 'context_dim': context_dim,
                 'noise_std': noise_std,
             }
+            if 'hidden_dim' in default_params:
+                env_params['hidden_dim'] = default_params['hidden_dim']
+
+            # --- Dynamic non-stationary parameters ---
+            STANDARD_KEYS = {'n_arms', 'context_dim', 'noise_std', 'hidden_dim',
+                             'delay_config', 'dataset_path'}
+            extra_params = {k: v for k, v in default_params.items()
+                            if k not in STANDARD_KEYS}
+
+            if extra_params:
+                st.markdown("---")
+                st.markdown("**🌪 Non-Stationary Parameters:**")
+                cols = st.columns(len(extra_params))
+                for col, (param_name, default_val) in zip(cols, extra_params.items()):
+                    with col:
+                        label = param_name.replace('_', ' ').title()
+                        if isinstance(default_val, int):
+                            min_val = 0 if ('step' in param_name or 'start' in param_name) else 1
+                            env_params[param_name] = st.number_input(
+                                f"{label}:", value=int(default_val), min_value=min_val,
+                                key=f"env_{param_name}")
+                        elif isinstance(default_val, float):
+                            env_params[param_name] = st.slider(
+                                f"{label}:", min_value=0.0, max_value=1.0,
+                                value=float(default_val), step=0.005,
+                                key=f"env_{param_name}")
         
     elif env_type == "📦 SOTA benchmarks":
         selected_env = st.selectbox(
@@ -777,6 +807,29 @@ else:
 
         st.subheader("📉 Average Regret (Log Scale)")
         st.plotly_chart(fig_avg_log, use_container_width=True)
+
+        # --- 5th Chart: Latent Dimension m(t) (only for NN-AGP Adaptive) ---
+        has_m_history = any('m_history_mean' in data for data in all_results.values())
+        if has_m_history:
+            fig_m = go.Figure()
+            for name, data in all_results.items():
+                if 'm_history_mean' in data:
+                    m_hist = data['m_history_mean']
+                    fig_m.add_trace(go.Scatter(
+                        x=list(range(1, len(m_hist) + 1)),
+                        y=m_hist,
+                        name=name, mode='lines', line=dict(width=2)))
+            fig_m.update_layout(
+                title="Latent Dimension Trajectory m(t)",
+                xaxis_title="Step", yaxis_title="Active Latent Dimensions (m)",
+                height=400, colorway=extended_colorway)
+
+            st.subheader("🧠 Latent Dimension Trajectory m(t)")
+            st.caption("Shows how the NN-AGP Adaptive algorithm dynamically prunes "
+                       "or expands its internal representation over time.")
+            st.plotly_chart(fig_m, use_container_width=True)
+
+            figures.append(fig_m)
 
         # --- Export (similar to Offline mode) ---
         st.subheader("📥 Export")

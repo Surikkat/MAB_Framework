@@ -3,7 +3,7 @@ Adaptive m via SVD pruning. Single shared model for all arms.
 """
 import math
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -36,24 +36,27 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
         jitter: float = 1e-6,
         T_spec: int = 5,
         eps_prune: float = 1e-2,
+        window_size: int = None,
         model=None
     ):
         super().__init__(n_arms, model)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.theta_dim = theta_dim
         self.x_dim = x_dim
-        self.m = int(m)
+        self.m_max = int(m)
+        self.m = self.m_max
         self.hidden_dim = hidden_dim
         self.beta = beta
         self.jitter = jitter
         self.mll_steps = int(mll_steps)
         self.T_spec = T_spec
         self.eps_prune = eps_prune
+        self.window_size = window_size
         self.step_count = 0
         self.lr = lr
 
-        self.encoder = _NeuralEmbedding(theta_dim, self.m, hidden_dim).to(self.device)
-        self.B = nn.Parameter(torch.randn(self.m, self.m, device=self.device) * 0.1)
+        self.encoder = _NeuralEmbedding(theta_dim, self.m_max, hidden_dim).to(self.device)
+        self.B = nn.Parameter(torch.randn(self.m_max, self.m_max, device=self.device) * 0.1)
 
         self.log_lengthscale = nn.Parameter(torch.log(torch.tensor(init_lengthscale, device=self.device)))
         self.log_variance = nn.Parameter(torch.log(torch.tensor(init_var, device=self.device)))
@@ -65,6 +68,7 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
         self.Xs = []
         self.ys = []
         self.m_history = []
+        self.V_proj = None
 
     def _build_optimizer(self, lr: float):
         params = list(self.encoder.parameters()) + [self.B, self.log_lengthscale, self.log_variance, self.log_noise]
@@ -136,40 +140,79 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
             self.optimizer.step()
 
     def posterior(self, x: np.ndarray, theta: np.ndarray):
-        x_t = torch.tensor(x, dtype=torch.float32, device=self.device).unsqueeze(0)
-        theta_t = torch.tensor(theta, dtype=torch.float32, device=self.device).unsqueeze(0)
-        g_t = self.encoder(theta_t).view(self.m, 1)
-        Sigma_p = self.B @ self.B.t()
-        k_x_x = self.variance
-
-        if len(self.Xs) == 0:
-            prior_var = (g_t.t() @ Sigma_p @ g_t).squeeze() * k_x_x
-            return 0.0, float(prior_var.cpu().item())
-
         with torch.no_grad():
+            x_t = torch.tensor(x, dtype=torch.float32, device=self.device).unsqueeze(0)
+            theta_t = torch.tensor(theta, dtype=torch.float32, device=self.device).unsqueeze(0)
+            g_t = self.encoder(theta_t).view(self.m_max, 1)
+            Sigma_p = self.B @ self.B.t()
+            k_x_x = self.variance
+
+            if self.V_proj is not None:
+                V = self.V_proj
+                g_proj = V @ g_t
+                Sigma_proj = V @ Sigma_p @ V.t()
+            else:
+                g_proj = g_t
+                Sigma_proj = Sigma_p
+
+            if len(self.Xs) == 0:
+                prior_var = (g_proj.t() @ Sigma_proj @ g_proj).squeeze() * k_x_x
+                return 0.0, float(prior_var.cpu().item())
+
             mats = self._assemble()
             G = mats["G"]
             X = mats["X"]
             y = mats["y"]
-            K_tilde = mats["K_tilde"]
             n = X.shape[0]
-            K = K_tilde + (self.sigma_eps ** 2 + self.jitter) * torch.eye(n, device=self.device)
-            L = torch.linalg.cholesky(K)
+
+            if self.V_proj is not None:
+                G_proj = G @ self.V_proj.t()
+            else:
+                G_proj = G
+
+            GS = G_proj @ Sigma_proj
+            GSGT = GS @ G_proj.t()
+            k_x = _rbf_kernel_matrix(X, X, self.lengthscale, self.variance)
+            K = k_x * GSGT + (self.sigma_eps ** 2 + self.jitter) * torch.eye(n, device=self.device)
+
+            try:
+                L = torch.linalg.cholesky(K)
+            except RuntimeError:
+                K = K + 1e-6 * torch.eye(n, device=self.device)
+                L = torch.linalg.cholesky(K)
+
             v = torch.linalg.solve(L, y)
             alpha = torch.linalg.solve(L.t(), v)
 
             k_x_vec = _rbf_kernel_matrix(x_t, X, self.lengthscale, self.variance).view(-1)
-            GS = G @ Sigma_p
-            gts = (GS @ g_t).view(-1)
+            gts = (GS @ g_proj).view(-1)
             k_tilde = k_x_vec * gts
             mu = (k_tilde.view(1, -1) @ alpha).squeeze()
 
             rhs = k_tilde.view(-1, 1)
             v2 = torch.linalg.solve(L, rhs)
-            prior_var = (g_t.t() @ Sigma_p @ g_t).squeeze() * k_x_x
+            prior_var = (g_proj.t() @ Sigma_proj @ g_proj).squeeze() * k_x_x
             sigma2 = prior_var - (v2.t() @ v2).squeeze()
             sigma2 = torch.clamp(sigma2, min=1e-12)
             return float(mu.cpu().item()), float(sigma2.cpu().item())
+
+    def prior_variance(self, x: np.ndarray, theta: np.ndarray) -> float:
+        with torch.no_grad():
+            theta_t = torch.tensor(theta, dtype=torch.float32, device=self.device).unsqueeze(0)
+            g_t = self.encoder(theta_t).view(self.m_max, 1)
+            Sigma_p = self.B @ self.B.t()
+            k_x_x = self.variance
+
+            if self.V_proj is not None:
+                V = self.V_proj
+                g_proj = V @ g_t
+                Sigma_proj = V @ Sigma_p @ V.t()
+            else:
+                g_proj = g_t
+                Sigma_proj = Sigma_p
+
+            prior_var = (g_proj.t() @ Sigma_proj @ g_proj).squeeze() * k_x_x
+            return float(prior_var.cpu().item())
 
     def select_arm(self, context: np.ndarray) -> int:
         if context.ndim == 1:
@@ -208,48 +251,26 @@ class NNAGPUCBAdaptiveAlgorithm(BaseAlgorithm):
             return
 
         self._fit_mll(steps=10)
+
+        # Spectral update
+        if (self.step_count % self.T_spec == 0) and (len(self.thetas) >= 2):
+            if self.window_size is not None and len(self.thetas) > self.window_size:
+                spec_thetas = self.thetas[-self.window_size:]
+            else:
+                spec_thetas = self.thetas
+
+            G_stack = torch.stack(spec_thetas, dim=0).to(self.device)
+            with torch.no_grad():
+                G_emb = self.encoder(G_stack)
+                U, S, Vh = torch.linalg.svd(G_emb, full_matrices=False)
+                if S.numel() > 0 and S.max() > 0:
+                    m_star = int(torch.sum(S > self.eps_prune * S.max()).item())
+                    m_star = max(1, min(m_star, self.m_max))
+                    self.m = m_star
+                    if m_star < self.m_max:
+                        self.V_proj = Vh[:m_star, :].to(self.device)
+                    else:
+                        self.V_proj = None
+
         self.m_history.append(self.m)
-
-        if (self.step_count % self.T_spec != 0) or (len(self.thetas) < self.m):
-            return
-
-        G_stack = torch.stack(self.thetas, dim=0).to(self.device)
-        with torch.no_grad():
-            G_emb = self.encoder(G_stack)
-            U, S, Vh = torch.linalg.svd(G_emb, full_matrices=False)
-            if S.numel() == 0:
-                return
-            m_star = int(torch.sum(S > self.eps_prune * S.max()).item())
-            m_star = max(1, min(m_star, G_emb.shape[1]))
-            if m_star >= G_emb.shape[1]:
-                return
-
-            V_top_raw = Vh[:m_star, :].to(self.device)
-
-            B_old = self.B.data
-            m_old = B_old.shape[0]
-            if m_old != G_emb.shape[1]:
-                B_tmp = torch.zeros((G_emb.shape[1], G_emb.shape[1]), device=self.device, dtype=B_old.dtype)
-                min_dim = min(B_old.shape[0], B_tmp.shape[0])
-                B_tmp[:min_dim, :min_dim] = B_old[:min_dim, :min_dim]
-                B_old = B_tmp
-
-        B_new = V_top_raw @ B_old @ V_top_raw.t()
-        self.B = nn.Parameter(B_new.to(self.device))
-
-        new_encoder = _NeuralEmbedding(self.theta_dim, m_star, self.hidden_dim).to(self.device)
-        try:
-            old_lin0 = self.encoder.net[0]
-            new_lin0 = new_encoder.net[0]
-            if old_lin0.weight.data.shape == new_lin0.weight.data.shape:
-                new_lin0.weight.data[:] = old_lin0.weight.data.clone()
-                new_lin0.bias.data[:] = old_lin0.bias.data.clone()
-        except Exception:
-            pass
-
-        self.encoder = new_encoder
-        self.m = m_star
-
-        self._build_optimizer(self.lr)
-        self._fit_mll(steps=10)
 

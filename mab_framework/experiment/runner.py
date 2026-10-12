@@ -42,6 +42,8 @@ class ExperimentRunner:
             "times": []
         }
 
+        all_runs_m_history = []
+
         for run in range(self.n_runs):
             run_seed = self._get_run_seed(run)
             random.seed(run_seed)
@@ -82,6 +84,12 @@ class ExperimentRunner:
                 tracker.add(reward, regret, iter_time)
 
             metrics = tracker.get_metrics()
+            # Capture latent dimension trajectory if the algorithm tracks it
+            if hasattr(algorithm, 'm_history') and len(algorithm.m_history) > 0:
+                m_hist = list(algorithm.m_history)
+                metrics["m_history"] = m_hist
+                all_runs_m_history.append(m_hist)
+
             all_runs_metrics["cumulative_regret"].append(metrics["cumulative_regret"])
             all_runs_metrics["average_regret"].append(metrics["average_regret"])
             all_runs_metrics["regrets"].append(metrics["regrets"])
@@ -97,11 +105,19 @@ class ExperimentRunner:
             aggregated[f"{key}_mean"] = np.mean(arr, axis=0).tolist()
             aggregated[f"{key}_std"] = np.std(arr, axis=0).tolist()
 
+        if len(all_runs_m_history) > 0:
+            min_len = min(len(h) for h in all_runs_m_history)
+            truncated = [h[:min_len] for h in all_runs_m_history]
+            aggregated["m_history_mean"] = np.mean(truncated, axis=0).tolist()
+            aggregated["m_history_std"] = np.std(truncated, axis=0).tolist()
+
         if self.output_file:
             logger = Logger(self.output_file)
             full = dict(aggregated)
             for key, value in all_runs_metrics.items():
                 full[f"{key}_raw"] = np.array(value).tolist()
+            if len(all_runs_m_history) > 0:
+                full["m_history_raw"] = all_runs_m_history
             logger.log(full)
 
         return aggregated
@@ -117,6 +133,8 @@ class ExperimentRunner:
             },
             "runtime": round(sum(metrics["times"]), 4),
         }
+        if "m_history" in metrics:
+            run_data["metrics"]["m_history"] = metrics["m_history"]
         path = os.path.join(self.save_dir, f"run_{run_idx}.json")
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(run_data, f, indent=2)

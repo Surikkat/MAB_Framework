@@ -333,9 +333,10 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
         *plt.cm.tab20c.colors
     ]
 
-    clean_delay = delay_desc.replace("🎲", "").replace("⏱️", "").replace("🟢", "").strip()
+    clean_env = re.sub(r'[^\w\s\(\)\-\.,/:]', '', str(env_name)).strip()
+    clean_delay = re.sub(r'[^\w\s\(\)\-\.,/:]', '', str(delay_desc)).strip()
     date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    meta_str = f"Environment: {env_name}   |   Delay: {clean_delay}   |   Steps: {steps}   |   Runs: {n_runs}   |   Date: {date_str}"
+    meta_str = f"Environment: {clean_env}   |   Delay: {clean_delay}   |   Steps: {steps}   |   Runs: {n_runs}   |   Date: {date_str}"
 
     # Clean the results table from emojis to avoid missing glyphs
     clean_df = results_df.copy()
@@ -507,6 +508,27 @@ def generate_online_pdf_report(env_name, delay_desc, steps, n_runs, algo_details
 
         pdf.savefig(fig_plots)
         plt.close(fig_plots)
+
+        # --- Optional page: Latent Dimension Trajectory ---
+        m_data = {name: data['m_history_mean']
+                  for name, data in all_results.items()
+                  if 'm_history_mean' in data and len(data['m_history_mean']) > 0}
+        if m_data:
+            fig_m_page = plt.figure(figsize=(11.69, 8.27))
+            ax_m = fig_m_page.add_subplot(111)
+            for idx, (name, m_hist) in enumerate(m_data.items()):
+                clean_name = re.sub(r'[^\w\s\(\)\-\.,/:]', '', str(name)).strip()
+                ax_m.plot(np.arange(1, len(m_hist) + 1), m_hist,
+                          label=clean_name, color=colors[idx % len(colors)], lw=2)
+            ax_m.set_title("Latent Dimension Trajectory m(t)",
+                           fontsize=14, fontweight='bold')
+            ax_m.set_xlabel("Step", fontsize=10)
+            ax_m.set_ylabel("Active Latent Dimensions (m)", fontsize=10)
+            ax_m.legend(fontsize=9)
+            ax_m.grid(True, linestyle='--', alpha=0.4)
+            plt.tight_layout()
+            pdf.savefig(fig_m_page)
+            plt.close(fig_m_page)
 
     output.seek(0)
     return output

@@ -10,6 +10,12 @@ from .synthetic_env import (
     SyntheticNeuralEnv,
     SyntheticNonContextualEnv,
 )
+from .nonstationary_env import (
+    TransientRankBurstEnv,
+    StepwiseRankEnv,
+    DriftingSubspaceEnv,
+    HarmonicDriftEnv,
+)
 from .log_data_env import LogDataEnvironment
 
 try:

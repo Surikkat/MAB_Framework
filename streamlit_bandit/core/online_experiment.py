@@ -55,6 +55,80 @@ def get_available_environments():
             'default_params': {'n_arms': 10, 'context_dim': 1, 'noise_std': 1.0},
             'n_arms': 10,
         },
+        {
+            'name': 'Transient Rank Burst (Non-stationary)',
+            'id': 'synthetic_burst',
+            'type': 'synthetic',
+            'description': 'Temporary surge in latent complexity during a burst window',
+            'env_class': 'TransientRankBurstEnv',
+            'default_params': {
+                'n_arms': 20, 'context_dim': 5, 'noise_std': 0.01,
+                'base_rank': 2, 'burst_rank': 5, 'burst_start': 70, 'burst_duration': 50
+            },
+            'n_arms': 20,
+            'info_text': (
+                "**Transient Rank Burst** simulates a temporary surge in problem complexity. "
+                "During normal operation, only `base_rank` latent factors drive rewards. "
+                "Between steps `burst_start` and `burst_start + burst_duration`, "
+                "`burst_rank` factors become active (e.g., a promotional event introducing "
+                "new user behavior patterns), then deactivate. Tests whether an algorithm "
+                "can detect the transient shift and adapt without overfitting."
+            ),
+        },
+        {
+            'name': 'Stepwise Rank Change (Non-stationary)',
+            'id': 'synthetic_stepwise',
+            'type': 'synthetic',
+            'description': 'Permanent changepoint shifting active latent rank',
+            'env_class': 'StepwiseRankEnv',
+            'default_params': {
+                'n_arms': 20, 'context_dim': 5, 'noise_std': 0.01,
+                'initial_rank': 6, 'final_rank': 2, 'changepoint_step': 100
+            },
+            'n_arms': 20,
+            'info_text': (
+                "**Stepwise Rank Change** simulates an abrupt structural changepoint. "
+                "Up to step `changepoint_step`, `initial_rank` latent factors influence rewards. "
+                "After the changepoint, the system drops to `final_rank` factors (e.g., an interface "
+                "redesign that simplifies user interaction modes). Tests whether an adaptive "
+                "algorithm can prune obsolete dimensions."
+            ),
+        },
+        {
+            'name': 'Drifting Subspace Rotation (Non-stationary)',
+            'id': 'synthetic_subspace',
+            'type': 'synthetic',
+            'description': 'Continuous rotation of the latent subspace coordinate system',
+            'env_class': 'DriftingSubspaceEnv',
+            'default_params': {
+                'n_arms': 20, 'context_dim': 5, 'noise_std': 0.01,
+                'rotation_rate': 0.03
+            },
+            'n_arms': 20,
+            'info_text': (
+                "**Drifting Subspace Rotation** simulates continuous concept drift where latent "
+                "factors rotate at angular velocity `rotation_rate` (radians/step). The underlying "
+                "dimensionality remains constant, but the mapping between contexts and rewards "
+                "continuously rotates in feature space. Tests tracking ability under smooth subspace drift."
+            ),
+        },
+        {
+            'name': 'Harmonic Concept Drift (Non-stationary)',
+            'id': 'synthetic_harmonic',
+            'type': 'synthetic',
+            'description': 'Oscillating preference dynamics with sinusoidal concept drift',
+            'env_class': 'HarmonicDriftEnv',
+            'default_params': {
+                'n_arms': 20, 'context_dim': 5, 'noise_std': 0.01,
+                'drift_frequency': 0.10
+            },
+            'n_arms': 20,
+            'info_text': (
+                "**Harmonic Concept Drift** simulates cyclical or seasonal variation in preferences. "
+                "Rewards follow a nonlinear harmonic function oscillating at frequency `drift_frequency`. "
+                "Tests whether algorithms can maintain low dynamic regret under continuous cyclic shifts."
+            ),
+        },
         # === SOTA ===
         {
             'name': 'Mushrooms',
@@ -317,7 +391,7 @@ def get_available_algorithms_for_online():
     return pd.DataFrame(algorithms)
 
 
-def make_algo_factory(algo_row, n_arms, feature_dim):
+def make_algo_factory(algo_row, n_arms, feature_dim, theta_dim=0, x_dim=None):
     """Creates an algorithm factory for ExperimentRunner"""
     def factory():
         AlgoClass = getattr(algorithms, algo_row['algo_name'])
@@ -337,6 +411,11 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
             elif 'input_dim' in m_init_params:
                 m_params['input_dim'] = model_feature_dim
                 
+            if 'theta_dim' in m_init_params:
+                m_params.setdefault('theta_dim', theta_dim)
+            if 'x_dim' in m_init_params:
+                m_params.setdefault('x_dim', x_dim if x_dim is not None else feature_dim)
+
             single_model_algos = {
                 'PFNTSAlgorithm',
                 'NeuralUCBAlgorithm',
@@ -359,9 +438,9 @@ def make_algo_factory(algo_row, n_arms, feature_dim):
 
         # Dimension auto-substitution
         if 'theta_dim' in init_params:
-            a_params.setdefault('theta_dim', 0)
+            a_params.setdefault('theta_dim', theta_dim)
         if 'x_dim' in init_params:
-            a_params.setdefault('x_dim', feature_dim)
+            a_params.setdefault('x_dim', x_dim if x_dim is not None else feature_dim)
         for key in ('d', 'context_dim', 'input_dim', 'n_features'):
             if key in init_params:
                 a_params.setdefault(key, feature_dim)
@@ -403,6 +482,9 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
     
     if feature_dim is None:
         feature_dim = getattr(env, 'context_dim', 5)
+
+    theta_dim = getattr(env, 'theta_dim', 0)
+    x_dim = getattr(env, 'x_dim', feature_dim)
     
     # Step limit
     env_T = getattr(env, 'T', None)
@@ -417,7 +499,7 @@ def run_online_experiment(env_row, selected_algos, env_params=None, steps=200, n
         if progress_callback:
             progress_callback(f"Running: {algo_name}...")
         
-        algo_factory = make_algo_factory(algo_row, n_arms, feature_dim)
+        algo_factory = make_algo_factory(algo_row, n_arms, feature_dim, theta_dim=theta_dim, x_dim=x_dim)
         
         runner = ExperimentRunner(
             env=env,

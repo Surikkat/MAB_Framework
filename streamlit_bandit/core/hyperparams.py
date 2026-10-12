@@ -123,6 +123,8 @@ ALGO_HYPERPARAMS = {
         'algo_params': [
             {'key': 'beta', 'label': 'β (exploration coef)', 'type': 'number',
              'min': 0.1, 'max': 10.0, 'default': 2.0, 'step': 0.1},
+            {'key': 'm', 'label': 'Initial Latent Dim (m)', 'type': 'number',
+             'min': 2, 'max': 100, 'default': 5, 'step': 1},
         ],
         'model_params': [],
     },

@@ -27,6 +27,7 @@ class BaseEnvironment(ABC):
     def __init__(self, delay_config: Optional[Dict] = None, **kwargs):
         self.delay_config = delay_config or {"type": "fixed", "value": 0}
         self.delay_buffer = DelayedFeedbackBuffer()
+        self.t = 0
         super().__init__(**kwargs)
 
     def _sample_delay(self) -> int:
@@ -62,6 +63,7 @@ class BaseEnvironment(ABC):
         if context is None:
             context = self.get_context()
         reward, optimal_reward = self._step_raw(action)
+        self.t += 1
         delay = self._sample_delay()
         
         self.delay_buffer.add(action=action, reward=reward, delay=delay, context=context)
