@@ -1,11 +1,17 @@
 import numpy as np
 from typing import List, Dict, Any
 from collections import deque
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import Adam
-import cvxpy as cp
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.optim import Adam
+    import cvxpy as cp
+except ImportError as e:
+    raise ImportError(
+        "This module requires PyTorch and cvxpy. Install with: "
+        "pip install banditlab[deep,optimization]"
+    ) from e
 from scipy.stats import invgamma
 
 from ..base import BaseAlgorithm

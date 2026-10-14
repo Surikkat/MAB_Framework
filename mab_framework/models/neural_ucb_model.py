@@ -1,7 +1,12 @@
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError as e:
+    raise ImportError(
+        "This module requires PyTorch. Install it with: pip install banditlab[deep]"
+    ) from e
 from typing import Optional
 from .base import BaseModel
 

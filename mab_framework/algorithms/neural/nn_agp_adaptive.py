@@ -4,9 +4,14 @@ Adaptive m via SVD pruning. Single shared model for all arms.
 import math
 import numpy as np
 from typing import List, Dict, Any
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError as e:
+    raise ImportError(
+        "This module requires PyTorch. Install it with: pip install banditlab[deep]"
+    ) from e
 from ..base import BaseAlgorithm
 from ...models.nn_agp_model import _NeuralEmbedding, _rbf_kernel_matrix
 

@@ -3,38 +3,98 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
+package-mode = true
 name = "banditlab"
-version = "1.0.0"
-description = "Multi-Armed Bandit Framework with support for contextual, GLM, NN, GP-based and delayed methods"
+version = "1.1.0"
+description = "A modular framework for reproducible multi-armed bandit research: 20+ algorithms, unified API, YAML configs and a Streamlit GUI"
 authors = ["Egor Suraveykin <surikkatik@gmail.com>"]
 readme = "README.md"
 license = "MIT"
+homepage = "https://github.com/Surikkat/MAB_Framework"
+repository = "https://github.com/Surikkat/MAB_Framework"
+documentation = "https://github.com/Surikkat/MAB_Framework#readme"
+keywords = [
+    "multi-armed-bandit", "contextual-bandit", "reinforcement-learning",
+    "thompson-sampling", "ucb", "linucb", "exploration-exploitation",
+    "offline-policy-evaluation", "delayed-feedback", "recommender-systems",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
 
 packages = [
     { include = "mab_framework" },
-    { include = "streamlit_bandit" }
+    { include = "streamlit_bandit" },
+]
+
+include = [
+    "mab_framework/configs/**/*.yaml",
+    "mab_framework/benchmarks/**/*.yaml",
+    "README.md",
+    "LICENSE",
+]
+
+exclude = [
+    "**/__pycache__",
+    "**/.idea",
+    "**/.gitignore",
+    "mab_framework/data",
+    "mab_framework/plots",
+    "mab_framework/scripts",
+    "mab_framework/tests",
+    "mab_framework/experiment/cmab_bandits",
+    "mab_framework/experiment/fgts_lasso",
+    "mab_framework/experiment/mushrooms",
+    "mab_framework/experiment/nn_agp",
+    "mab_framework/experiment/results_fgts_paper_test.json",
+    "results",
+    "dist",
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
-numpy = "1.23.5"
-pandas = ">=1.5.0,<2.0.0"
-scikit-learn = ">=1.3.0"
-scipy = "1.9.3"
+python = ">=3.10,<3.13"
+
+# --- core (лёгкие, обязательные) ---
+numpy = ">=1.23"
+pandas = ">=1.5"
+scipy = ">=1.9"
+scikit-learn = ">=1.3"
 pyyaml = ">=6.0"
-coba = ">=8.0"
-matplotlib = ">=3.7.0"
-seaborn = ">=0.11.2,<0.12.0"
-plotly = ">=5.0.0"
-streamlit = ">=1.28.0"
-torch = ">=2.0.0"
-cvxpy = ">=1.0.0"
+tqdm = ">=4.65"
+
+# --- optional extras ---
+torch = { version = ">=2.0", optional = true }
+cvxpy = { version = ">=1.3", optional = true }
+coba = { version = ">=8.0", optional = true }
+matplotlib = { version = ">=3.7", optional = true }
+seaborn = { version = ">=0.11", optional = true }
+plotly = { version = ">=5.0", optional = true }
+streamlit = { version = ">=1.28", optional = true }
+
+[tool.poetry.extras]
+deep = ["torch"]
+optimization = ["cvxpy"]
+obp = ["coba"]
+viz = ["matplotlib", "seaborn", "plotly"]
+gui = ["streamlit", "plotly", "matplotlib", "seaborn"]
+all = ["torch", "cvxpy", "coba", "matplotlib", "seaborn", "plotly", "streamlit"]
 
 [tool.poetry.scripts]
 bandit = "mab_framework.run:main"
+bandit-gui = "streamlit_bandit.cli:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.0.0"
+pytest-cov = ">=4.0"
 black = ">=23.0.0"
 ruff = ">=0.1.0"
 mypy = ">=1.0.0"
@@ -43,11 +103,12 @@ jupyter = ">=1.0.0"
 
 [tool.black]
 line-length = 100
-target-version = ['py310']
+target-version = ['py310', 'py311', 'py312']
 
 [tool.ruff]
 line-length = 100
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"

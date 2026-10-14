@@ -3,8 +3,14 @@ Neural Thompson Sampling with per-arm networks.
 """
 import numpy as np
 from typing import List, Dict, Any
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError as e:
+    raise ImportError(
+        "This module requires PyTorch. Install it with: pip install banditlab[deep]"
+    ) from e
 from itertools import chain
 from torch.optim import Adam
 from ..base import BaseAlgorithm

@@ -1,251 +1,242 @@
-![PyPI](https://img.shields.io/pypi/v/BanditLab)
-![Python](https://img.shields.io/pypi/pyversions/BanditLab)
-![License](https://img.shields.io/badge/license-MIT-green)
-
 # BanditLab
 
-A modular framework for reproducible contextual bandit research with three levels of accessibility.
+[![PyPI version](https://img.shields.io/pypi/v/banditlab.svg)](https://pypi.org/project/banditlab/)
+[![Python versions](https://img.shields.io/pypi/pyversions/banditlab.svg)](https://pypi.org/project/banditlab/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/Surikkat/MAB_Framework.svg?style=social)](https://github.com/Surikkat/MAB_Framework)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://surikkat.github.io/MAB_Framework/)
 
-- 20+ algorithms (from classical to state-of-the-art)
-- unified API
-- plug-and-play models and datasets
-- config-driven experiments
-- **Streamlit GUI** — no coding required
+**A modular framework for reproducible multi-armed bandit research.**
 
-**BanditLab** is designed for both research and practical experimentation. It provides three complementary levels of interaction:
-
-1. **Python Library** — maximum flexibility for researchers and engineers
-2. **YAML Configuration** — reproducible experiments without coding
-3. **Streamlit Web Interface** — accessible GUI for non-programmers
+20+ algorithms · 3 levels of access · delayed feedback · offline policy evaluation
 
 ---
+
+## Why BanditLab
+
+- **20+ bandit algorithms** — from classical (ε-greedy, UCB, Thompson Sampling) to state-of-the-art (NeuralUCB, GP-TS, NN-AGP, delayed feedback bandits).
+- **Model–algorithm decoupling** — combine any algorithm with any reward model (linear, GLM, Gaussian process, neural network).
+- **Three levels of access** — Python API for researchers, YAML configs for reproducible experiments, Streamlit GUI for non-programmers.
+- **Built for research** — offline policy evaluation (DM, IPS, DR), delayed feedback support, and reproducible benchmarks.
+- **Lightweight core** — `pip install banditlab` pulls only NumPy, pandas, scipy, scikit-learn, and PyYAML. Neural and GUI components are optional extras.
 
 ## Installation
 
 ```bash
-pip install BanditLab
+pip install banditlab
 ```
----
 
-## Three Levels of Accessibility
+Optional extras:
 
-### Level 1: Python Library (Maximum Flexibility)
+```bash
+pip install banditlab[deep]          # Neural bandits (PyTorch)
+pip install banditlab[optimization]  # RegCB (cvxpy)
+pip install banditlab[obp]           # Open Bandit Dataset support
+pip install banditlab[viz]           # Matplotlib / Seaborn / Plotly
+pip install banditlab[gui]           # Streamlit GUI
+pip install banditlab[all]           # Everything
+```
 
-Full programmatic control over every component:
+**CPU-only PyTorch**: [deep] pulls the default (GPU) PyTorch wheel (~550 MB).
+For a lighter install, pre-install the CPU build:
 
-'''python
-from mab_framework.algorithms import ThompsonSampling
-from mab_framework.environments import DatasetEnvironment
-from mab_framework.models import OnlineRidgeRegression
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install banditlab[deep]
+```
 
-env = DatasetEnvironment("data/mushroom_bandit_5000.csv")
-model = OnlineRidgeRegression(l2_reg=1.0)
-bandit = ThompsonSampling(model=model, n_arms=env.n_arms)
+Requirements: Python 3.10–3.12.
 
-for context in env:
-    arm = bandit.select_arm(context)
-    reward = env.pull(arm)
-    bandit.update(context, arm, reward)
-'''
+## Quickstart (60 seconds)
+```python
+from mab_framework import (
+    SyntheticLinearEnv, ThompsonSampling, OnlineRidgeRegression,
+)
 
-Target audience: Academic researchers, data scientists, ML engineers.
+# 1. Environment: 3 arms, 5-dimensional context
+env = SyntheticLinearEnv(n_arms=3, context_dim=5)
+env.reset()
 
-### Level 2: YAML Configuration (Reproducible Experiments)
+# 2. Algorithm: Thompson Sampling with a linear reward model
+model = OnlineRidgeRegression(feature_dim=5, l2_reg=1.0)
+bandit = ThompsonSampling(n_arms=3, model=model)
 
-Declarative experiment specification without writing code:
+# 3. Interaction loop
+regret = 0.0
+for _ in range(1000):
+    ctx = env.get_context()
+    arm = bandit.select_arm(ctx)
+    step = env.step(arm, ctx)
+    bandit.update(step["available_rewards"])
+    regret += step["optimal_reward"] - step["instant_reward"]
 
-'''yaml
+print(f"Cumulative regret: {regret:.2f}")
+```
+More examples in [examples/]().
+
+## Three levels of access
+
+### 1. Python API 
+Full programmatic control. See [docs/quickstart.md]() and [examples/]().
+
+### 2. YAML configuration
+Reproducible experiments without writing code:
+
+```yaml
 experiment:
-  name: "pool_test"
-  steps: 200
-  n_runs: 5
+  name: "synthetic_test"
+  steps: 1000
+  n_runs: 10
 
 environment:
-  name: "DatasetEnvironment"
-  params:
-    dataset_path: "data/E1_dataset.npz"
+  name: "SyntheticLinearEnv"
+  params: { n_arms: 3, context_dim: 5 }
 
 algorithms:
   - name: "ThompsonSampling"
-    display_name: "Thompson Sampling (TS)"
-    params: {}
+    display_name: "TS"
     model:
       name: "OnlineRidgeRegression"
       params: { l2_reg: 1.0 }
       one_model_per_arm: true
 
   - name: "UCBAlgorithm"
-    display_name: "LinUCB (alpha=1.0)"
+    display_name: "UCB (alpha=1.0)"
     params: { alpha: 1.0 }
     model:
       name: "OnlineRidgeRegression"
       params: { l2_reg: 1.0 }
       one_model_per_arm: true
 
-metrics:
-  - cumulative_regret
-  - average_regret
-
+metrics: [cumulative_regret, average_regret]
 output:
-  save_path: "./results/pool_test"
-'''
+  save_path: "./results/synthetic_test"
+```
 
-Run with a single command:
-'''bash
-python -m banditlab config.yaml
-'''
+Run it:
+```bash
+bandit run config.yaml
+```
 
-Target audience: Academic researchers, data scientists, ML engineers.
+See [docs/yaml_config.md]() for the full schema.
 
-### Level 3: Streamlit Web Interface (Maximum Accessibility)
+### 3. Streamlit GUI
 
-Intuitive web-based GUI — no programming required:
+```bash
+bandit-gui
+```
 
-'''bash
-streamlit run streamlit_bandit/app.py
-'''
+<!-- TODO: add screenshot: docs/assets/gui_main.png --><!-- ![BanditLab GUI](docs/assets/gui_main.png) -->
 
-Features:
+Features: offline policy evaluation (OPE), online benchmarking, dynamic hyperparameter tuning, interactive regret charts, exportable reports.
 
-  - Offline Policy Evaluation (OPE) — evaluate algorithms on historical logs using DM, IPS, and DR estimators
+See [docs/gui.md]().
 
-  - Online Benchmarking — run algorithms on synthetic and real-world environments with regret visualization
+## Algorithms
 
-  - Dynamic hyperparameter configuration
+| Category  | Algorithms |
+|-----------|-----------|
+| Non-contextual  | EpsilonGreedy, UCBAlgorithm, ThompsonSampling, NonContextualTSBandit, BootstrapTSBandit, FGTSAlgorithm  |
+| Contextual / Linear  | LinUCBAlgorithm, CustomTSBandit, SGDTSBandit  |
+| Gaussian Process  | GPTSBandit, GPUCBKernelFlexibleAlgorithm  |
+| GLM  | RegCBBandit  |
+| Delayed feedback  | DelayedThompsonSampling, JoulaniDelayedUCB, PatientBandits, VernadeDelayedUCB  |
+| Neural  | NeuralUCBAlgorithm, NNUCBAlgorithm, NNTSBAlgorithm, NNAGPUCBAlgorithm, NNAGPUCBAdaptiveAlgorithm, NeuralBanditWithLimitedMemory_5,PFNTSAlgorithm  |
 
-  - Real-time progress tracking
+Full list with references in [docs/algorithms.md]().
 
-  - Interactive charts and leaderboards
+## Environments
 
-  - Exportable reports
+| Type  | Classes |
+|-----------|-----------|
+| Synthetic  | SyntheticLinearEnv, SyntheticGLMEnv, SyntheticNeuralEnv, SyntheticNonContextualEnv  |
+| Dataset  | DatasetEnvironment (CSV / NPZ / JSON / folder)  |
+| Logged data  | LogDataEnvironment (for offline policy evaluation)  |
+| Open Bandit  | OpenBanditEnvironment (requires banditlab[obp])  |
 
-Target audience: Business analysts, product managers, educators, domain experts.
+See docs/environments.md.
 
-## Key Features
+## Models
 
-- 20+ algorithms — from classical (UCB, TS) to neural and GP-based methods
+See [docs/models.md]().
 
-- Model–Algorithm decoupling — combine any algorithm with any reward model
+## CLI reference
 
-- Three levels of use — Python API, YAML configs, or Streamlit GUI
+```bash
+bandit run <config.yaml>              # Run a custom experiment
+bandit benchmark <name>               # Run a built-in benchmark
+bandit evaluate --config <config.yaml>  # Offline policy evaluation
+bandit-gui                            # Launch the Streamlit GUI
+python -m mab_framework ...           # Same as `bandit`
+```
 
-- Contextual bandits support
+Built-in benchmarks:
+- **Synthetic**: linear_contextual, glm_feature, neural, noncontextual
+- **Real**: movielens, mushrooms, open_bandit_all, open_bandit_men, open_bandit_ope
 
-- Delayed feedback support — built-in support for bandits with delays
+See [docs/cli.md]().
 
-- Offline Policy Evaluation — DM, IPS, DR estimators
+## Extending BanditLab
 
-- Extensible — easily implement new algorithms or models
+### Custom model
 
-- Reproducible experiments — runner, logging, and metrics included
+```python
+import numpy as np
 
-## Core Design
+class MyModel:
+    def __init__(self, feature_dim: int):
+        self.w = np.zeros(feature_dim)
 
-BanditLab separates decision-making from prediction:
+    def fit(self, X, y):
+        # update self.w
+        ...
 
-  - Models learn to predict rewards from context
+    def sample(self, x):
+        # return a sampled reward estimate
+        return float(x @ self.w)
+```
 
-  - Algorithms decide which arm to pull using model outputs
+### Custom algorithm
 
-This enables flexible combinations:
+```python
+from mab_framework.algorithms.base import BaseAlgorithm
 
-  - Thompson Sampling + Linear Model
+class MyBandit(BaseAlgorithm):
+    def select_arm(self, context):
+        # return arm index
+        ...
 
-  - Thompson Sampling + GLM
-
-  - UCB + Neural Network
-
-  - UCB + Gaussian Process
-
-## Supported Methods
-
-### Algorithms (20+)
-
-
-Models
-
-    OnlineRidgeRegression (linear)
-
-    GLMLaplaceModel (generalized linear)
-
-    GPRFFModel, ExactGPModel (Gaussian processes)
-
-    NeuralUCBModel, NNUCBModel, NNAGPModel (neural networks)
-
-    FGTSModel, FGTSLassoModel
-
-    BootstrapEnsembleModel
-
-    SGDModel
-
-    KernelUCBModel
-
-Architecture
-
-The framework is built around four components:
-
-    Environments — provide contexts and rewards (synthetic or data-driven)
-
-    Models — estimate reward (typically one per arm)
-
-    Algorithms — handle exploration vs exploitation
-
-    Runner — executes experiment loops
-
-Project Structure
-text
-
-mab_framework/           # Core library
-├── algorithms/          # Bandit algorithms
-├── models/              # Reward prediction models
-├── environments/        # Data sources and simulators
-├── experiment/          # Runner and logging
-└── scripts/             # Utility scripts
-
-streamlit_bandit/        # Streamlit GUI application
-├── app.py               # Main entry point
-├── core/                # Core logic (candidates, hyperparams, online experiments)
-├── data/                # Demo datasets
-└── utils/               # Visualization and export utilities
-
-Extending the Framework
-Custom Model
-python
-
-class CustomModel:
-    def fit(self, X, y): ...
-    def predict(self, X): ...
-    def get_uncertainty(self, X): ...
-
-Custom Algorithm
-python
-
-class CustomAlgorithm:
-    def select_arm(self, context): ...
-    def update(self, context, arm, reward): ...
-
-All components inherit from base classes, making extension straightforward.
-
-License
-
-MIT License
-Citation
-
-If you use BanditLab in research, please consider citing the repository:
-bibtex
-
-@misc{banditlab2024,
-    author = {BanditLab Contributors},
-    title = {BanditLab: A Modular Framework for Contextual Bandit Research},
-    year = {2024},
-    publisher = {GitHub},
-    url = {https://github.com/Surikkat/MAB_Framework}
-}
-
-Links
-
-    PyPI: https://pypi.org/project/BanditLab/
-
-    GitHub: https://github.com/Surikkat/MAB_Framework
-
-    Documentation: Coming soon
+    def update(self, feedbacks):
+        for fb in feedbacks:
+            action = fb["action"]
+            reward = fb["reward"]
+            context = fb["context"]
+            # update model
+            ...
+```
+
+See [docs/extending.md]() and [examples/07_custom_algorithm.py]().
+
+# BanditLab Examples
+
+| # | File | Topic | Requires |
+|---|---|---|---|
+| 01 | [quickstart.py](01_quickstart.py) | Minimal TS example | core |
+| 02 | [non_contextual.py](02_non_contextual.py) | ε-greedy, UCB, TS | core |
+| 03 | [contextual.py](03_contextual.py) | LinUCB, TS | core |
+| 04 | [neural.py](04_neural.py) | NeuralUCB | `[deep]` |
+| 05 | [delayed.py](05_delayed.py) | Delayed feedback | core |
+| 06 | [ope.py](06_ope.py) | Offline policy evaluation | core |
+| 07 | [custom_algorithm.py](07_custom_algorithm.py) | Extend BaseAlgorithm | core |
+| 08 | [custom_model.py](08_custom_model.py) | Extend BaseModel | core |
+| 09 | [custom_environment.py](09_custom_environment.py) | Extend BaseEnvironment | core |
+| 10 | [streamlit_launch.py](10_streamlit_launch.py) | Launch GUI | `[gui]` |
+
+All examples are self-contained and runnable:
+
+```bash
+python examples/01_quickstart.py
+
+## License
+
+MIT License. See [LICENSE]().

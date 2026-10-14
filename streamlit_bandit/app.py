@@ -7,19 +7,16 @@ import plotly.graph_objects as go
 import plotly.express as px
 from pathlib import Path
 
-_root_dir = str(Path(__file__).resolve().parent.parent)
-if _root_dir not in sys.path:
-    sys.path.insert(0, _root_dir)
 
-from core.evaluator import OPEEvaluator
-from core.candidates import CandidatePool
-from core.validator import LogValidator
-from utils.visualisation import (
+from streamlit_bandit.core.evaluator import OPEEvaluator
+from streamlit_bandit.core.candidates import CandidatePool
+from streamlit_bandit.core.validator import LogValidator
+from streamlit_bandit.utils.visualisation import (
     plot_candidate_comparison, 
     plot_effective_sample_size,
     plot_method_agreement
 )
-from utils.export import (
+from streamlit_bandit.utils.export import (
     generate_report,
     get_effective_algorithm_params,
     generate_online_csv_report,
@@ -27,7 +24,7 @@ from utils.export import (
     generate_online_html_report,
     generate_online_pdf_report
 )
-from core.hyperparams import render_hyperparams, reset_hyperparams
+from streamlit_bandit.core.hyperparams import render_hyperparams, reset_hyperparams
 
 st.set_page_config(
     page_title="OPE Platform – A/B without traffic",
